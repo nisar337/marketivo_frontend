@@ -14,10 +14,12 @@ const statusClass = {
   suspended: 'bg-red-100 text-red-800',
 }
 
+import ModernLoader from '../components/ModernLoader'
+
 function Spinner() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      <ModernLoader size={64} label="Loading…" />
     </div>
   )
 }
@@ -645,7 +647,7 @@ function AdminPanel() {
 
           {loadingProducts ? (
             <div className="flex justify-center py-20">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+              <ModernLoader size={64} label="Loading products…" />
             </div>
           ) : vendorProducts.length === 0 ? (
             <p className="text-center text-gray-500 py-20">No products found for this vendor.</p>
@@ -725,7 +727,7 @@ function AdminTable({ title, icon: Icon, loading, empty, columns, rows }) {
       </h2>
       {loading ? (
         <div className="flex justify-center py-12 rounded-xl border border-gray-200 bg-white">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <ModernLoader size={56} />
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">

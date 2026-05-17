@@ -25,6 +25,7 @@ import {
 import { MdStorefront } from 'react-icons/md'
 import LogoutConfirmation from '../components/LogoutConfirmation'
 import DeleteConfirmation from '../components/DeleteConfirmation'
+import ModernLoader from '../components/ModernLoader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -574,7 +575,7 @@ export default function VendorDashboard() {
             <div>
               {loading ? (
                 <div className="flex justify-center py-6">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  <ModernLoader size={48} />
                 </div>
               ) : products.length === 0 ? (
                 <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">

@@ -7,6 +7,7 @@ import axios from 'axios'
 import { FiShoppingCart, FiMessageCircle, FiMapPin, FiSearch, FiHome, FiGrid, FiUsers, FiTag, FiInfo, FiPhone, FiCheck, FiCheckCircle, FiLock, FiRotateCcw, FiHeadphones, FiFacebook, FiInstagram, FiTwitter, FiLinkedin, FiEye, FiEyeOff, FiSun, FiMoon, FiUser, FiEdit, FiLogOut, FiLayout, FiChevronDown, FiX } from 'react-icons/fi'
 import { resolveAfterLogin } from '../utils/postLogin'
 import LogoutConfirmation from '../components/LogoutConfirmation'
+import ModernLoader from '../components/ModernLoader'
 import ShoppingLocationHeader from '../components/ShoppingLocationHeader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -650,7 +651,7 @@ export default function HomePage() {
         </div>
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <ModernLoader size={56} label="Loading products…" />
           </div>
         ) : (
           <div className="grid grid-cols-6 gap-4">

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { FiSearch, FiGrid, FiArrowLeft } from 'react-icons/fi'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -86,7 +87,7 @@ export default function CategoriesPage() {
             </div>
           </div>
           <div className="flex justify-center py-20">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+            <ModernLoader size={64} label="Loading categories…" />
           </div>
         </div>
       </MarketingLayout>
@@ -138,7 +139,7 @@ export default function CategoriesPage() {
 
               {loadingProducts ? (
                 <div className="flex justify-center py-16">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+                  <ModernLoader size={56} label="Loading products…" />
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className={`text-center py-16 transition-all duration-700 delay-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>

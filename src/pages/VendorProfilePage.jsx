@@ -4,6 +4,7 @@ import axios from 'axios'
 import { FiMapPin, FiPhone, FiGlobe, FiArrowLeft, FiShoppingCart } from 'react-icons/fi'
 import { MdStorefront } from 'react-icons/md'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 import VerifiedBadge from '../components/VerifiedBadge'
 import { useCart } from '../context/CartContext'
 
@@ -45,7 +46,7 @@ export default function VendorProfilePage() {
     return (
       <MarketingLayout activeNav="vendors">
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <ModernLoader size={64} label="Loading vendor…" />
         </div>
       </MarketingLayout>
     )

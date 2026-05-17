@@ -19,6 +19,7 @@ import {
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 import VerifiedBadge from '../components/VerifiedBadge'
 import { clearStoredShoppingLocation, setStoredShoppingLocation } from '../utils/customerLocation'
 import { notifyShoppingLocationChanged } from '../utils/shoppingLocationSync'
@@ -98,7 +99,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+        <ModernLoader size={64} label="Loading profile…" />
       </div>
     )
   }

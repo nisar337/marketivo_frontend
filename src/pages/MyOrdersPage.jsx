@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FiPackage, FiMapPin, FiCalendar, FiChevronRight, FiShoppingBag } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -80,7 +81,7 @@ export default function MyOrdersPage() {
 
           {loading ? (
             <div className="flex justify-center py-24">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              <ModernLoader size={64} label="Loading orders…" />
             </div>
           ) : orders.length === 0 ? (
             <div className="mt-10 rounded-2xl border border-gray-200 bg-white px-6 py-16 text-center shadow-sm">

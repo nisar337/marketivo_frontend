@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi'
 import { MdStorefront } from 'react-icons/md'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 import VerifiedBadge from '../components/VerifiedBadge'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -433,7 +434,7 @@ export default function VendorsPage() {
             </div>
           ) : listingBusy ? (
             <div className="flex justify-center py-16">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+              <ModernLoader size={56} label="Loading vendors…" />
             </div>
           ) : filteredVendors.length === 0 ? (
             <div

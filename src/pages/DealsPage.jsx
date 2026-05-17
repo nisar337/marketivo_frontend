@@ -5,6 +5,7 @@ import { FiSearch, FiTag, FiArrowLeft, FiShoppingCart } from 'react-icons/fi'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import MarketingLayout from '../components/MarketingLayout'
+import ModernLoader from '../components/ModernLoader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -62,7 +63,7 @@ export default function DealsPage() {
             </div>
           </div>
           <div className="flex justify-center py-20">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+            <ModernLoader size={64} label="Loading deals…" />
           </div>
         </div>
       </MarketingLayout>
