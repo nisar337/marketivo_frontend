@@ -153,7 +153,7 @@ export default function VendorProfilePage() {
                     <div className="aspect-square bg-gray-100 overflow-hidden">
                       {product.images?.[0] ? (
                         <img
-                          src={product.images[0]}
+                          src={product.images[0].url}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
