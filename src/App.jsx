@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
@@ -20,6 +21,7 @@ import DealsPage from './pages/DealsPage'
 import VendorProfilePage from './pages/VendorProfilePage'
 import ProductPage from './pages/ProductPage'
 import ChatBot from './components/Chat/ChatBot'
+import SplashScreen from './components/SplashScreen'
 
 function ChatBotGate() {
   const { pathname } = useLocation()
@@ -27,12 +29,33 @@ function ChatBotGate() {
   return <ChatBot />
 }
 
+function AnimatedRoutes({ children }) {
+  const location = useLocation()
+  return (
+    <div key={location.pathname} className="page-transition">
+      {children}
+    </div>
+  )
+}
+
 function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !sessionStorage.getItem('marketivo_splash_seen')
+  })
+
+  const handleSplashDone = () => {
+    sessionStorage.setItem('marketivo_splash_seen', '1')
+    setShowSplash(false)
+  }
+
   return (
     <BrowserRouter>
+      {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <ThemeProvider>
       <AuthProvider>
         <CartProvider>
+        <AnimatedRoutes>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route
@@ -117,6 +140,7 @@ function App() {
           <Route path="/vendor/:id" element={<VendorProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </AnimatedRoutes>
         <ChatBotGate />
         </CartProvider>
       </AuthProvider>

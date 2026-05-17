@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
@@ -30,6 +30,10 @@ import {
   FiEdit,
   FiLogOut,
   FiLayout,
+  FiMapPin,
+  FiCheckCircle,
+  FiChevronDown,
+  FiX,
 } from 'react-icons/fi'
 import { resolveAfterLogin } from '../utils/postLogin'
 import ShoppingLocationHeader from './ShoppingLocationHeader'
@@ -102,10 +106,71 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [authMode, setAuthMode] = useState('login')
-  const [formData, setFormData] = useState({ email: '', password: '', name: '', role: 'customer' })
+  const [formData, setFormData] = useState({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsError, setGpsError] = useState('')
+
+  const captureGps = () => {
+    setGpsError('')
+    if (!('geolocation' in navigator)) {
+      setGpsError('Geolocation is not supported by your browser.')
+      return
+    }
+    setGpsLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setFormData((prev) => ({ ...prev, lat: pos.coords.latitude, lng: pos.coords.longitude }))
+        setGpsLoading(false)
+      },
+      (err) => {
+        setGpsLoading(false)
+        setGpsError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission denied. Please allow location access to register as a vendor.'
+            : 'Could not get your location. Please try again.'
+        )
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
+  }
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [categorySearch, setCategorySearch] = useState('')
+  const categoryRef = useRef(null)
+
+  useEffect(() => {
+    if (!showCategoryMenu) return
+    const onClick = (e) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+        setShowCategoryMenu(false)
+      }
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowCategoryMenu(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showCategoryMenu])
+
+  const handleSelectCategory = (cat) => {
+    setSelectedCategory(cat)
+    setShowCategoryMenu(false)
+    setCategorySearch('')
+    if (cat) {
+      navigate(`/categories?cat=${cat._id}`)
+    }
+  }
+
+  const filteredCategoryList = categories.filter((c) =>
+    c.name?.toLowerCase().includes(categorySearch.toLowerCase())
+  )
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -151,12 +216,20 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault()
+    if (authMode === 'register' && formData.role === 'vendor' && !formData.storeName?.trim()) {
+      setAlert('Store name is required for vendor registration.')
+      return
+    }
+    if (authMode === 'register' && formData.role === 'vendor' && (formData.lat == null || formData.lng == null)) {
+      setAlert('Please capture your GPS location to register as a vendor.')
+      return
+    }
     setSubmitting(true)
     try {
       if (authMode === 'login') {
         const data = await login(formData.email, formData.password)
         handleCloseModal()
-        setFormData({ email: '', password: '', name: '', role: 'customer' })
+        setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
         navigate(resolveAfterLogin(data.user, location.state?.from), { replace: true })
       } else {
         const response = await axios.post(`${API}/api/auth/register`, {
@@ -164,11 +237,15 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          storeName: formData.storeName,
+          description: formData.description,
+          lat: formData.lat,
+          lng: formData.lng,
         })
         if (response.data.token) {
           const data = await login(formData.email, formData.password)
           handleCloseModal()
-          setFormData({ email: '', password: '', name: '', role: 'customer' })
+          setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
           navigate(resolveAfterLogin(data.user, null), { replace: true })
         }
       }
@@ -196,14 +273,103 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
           </Link>
 
           <div className="flex-1 min-w-[200px] mx-4 flex items-center gap-2 flex-wrap">
-            <select className="px-3 py-2 text-black border border-gray-300 rounded-lg text-sm bg-white transition-all duration-200 focus:ring-2 focus:border-transparent cursor-pointer hover:border-gray-400">
-              <option>All Categories</option>
-              {categories.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div ref={categoryRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCategoryMenu((v) => !v)}
+                className={`group flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border bg-white text-gray-800 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${showCategoryMenu ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-300'}`}
+                aria-haspopup="listbox"
+                aria-expanded={showCategoryMenu}
+              >
+                
+                <span className="font-medium truncate max-w-[160px]">
+                  {selectedCategory ? selectedCategory.name : 'All Categories'}
+                </span>
+                <FiChevronDown
+                  size={16}
+                  className={`text-gray-500 transition-transform duration-300 ${showCategoryMenu ? 'rotate-180 text-blue-600' : ''}`}
+                />
+              </button>
+
+              {showCategoryMenu && (
+                <div
+                  className="absolute left-0 top-full mt-2 z-50 w-72 origin-top-left rounded-xl border border-gray-200 bg-white shadow-2xl ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-200"
+                  style={{ animation: 'cat-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+                  role="listbox"
+                >
+                  <div className="p-3 border-b border-gray-100">
+                    <div className="relative">
+                      <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        placeholder="Search categories…"
+                        className="w-full pl-8 pr-8 py-2 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+                      />
+                      {categorySearch && (
+                        <button
+                          type="button"
+                          onClick={() => setCategorySearch('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto py-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCategory(null)}
+                      className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition-all duration-150 hover:bg-blue-50 hover:pl-5 ${!selectedCategory ? 'bg-blue-50/60 text-blue-700 font-semibold' : 'text-gray-700'}`}
+                    >
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600">
+                        <FiGrid size={14} />
+                      </span>
+                      <span className="flex-1">All Categories</span>
+                      {!selectedCategory}
+                    </button>
+
+                    {filteredCategoryList.length === 0 ? (
+                      <p className="px-4 py-6 text-center text-xs text-gray-500">No categories match “{categorySearch}”</p>
+                    ) : (
+                      filteredCategoryList.map((c) => {
+                        const active = selectedCategory?._id === c._id
+                        return (
+                          <button
+                            key={c._id}
+                            type="button"
+                            onClick={() => handleSelectCategory(c)}
+                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-left transition-all duration-150 hover:bg-blue-50 hover:pl-5 ${active ? 'bg-blue-50/60 text-blue-700 font-semibold' : 'text-gray-700'}`}
+                          >
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 text-gray-600 group-hover:from-blue-100 group-hover:to-blue-50">
+                              <FiGrid size={14} />
+                            </span>
+                            <span className="flex-1 truncate">{c.name}</span>
+                            {active && <FiCheckCircle size={16} className="text-blue-600" />}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  <div className="border-t border-gray-100 p-2">
+                    <Link
+                      to="/categories"
+                      onClick={() => setShowCategoryMenu(false)}
+                      className="flex items-center justify-center gap-2 w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:shadow-md hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5"
+                    >
+                      <FiGrid size={14} />
+                      Browse all categories
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
             <input
               type="text"
               placeholder="Search for products, vendors..."
@@ -573,6 +739,62 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
                     </select>
                   </div>
                 )}
+                {authMode === 'register' && formData.role === 'vendor' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Store Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.storeName}
+                        onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
+                        className="w-full px-3 py-1.5 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="e.g. Fresh Corner Lahore"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Store Description</label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full px-3 py-1.5 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Tell shoppers what you sell (optional)"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Store GPS Location <span className="text-red-500">*</span></label>
+                      <p className="text-[11px] text-gray-600 mb-1">Required for admin approval so nearby shoppers can find you.</p>
+                      <button
+                        type="button"
+                        onClick={captureGps}
+                        disabled={gpsLoading}
+                        className="inline-flex items-center gap-2 rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs font-medium text-green-800 shadow-sm hover:bg-green-50 disabled:opacity-60"
+                      >
+                        {gpsLoading ? (
+                          <>
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-green-700 border-t-transparent" />
+                            Getting location…
+                          </>
+                        ) : formData.lat != null && formData.lng != null ? (
+                          <>
+                            <FiCheckCircle size={14} />
+                            Update GPS location
+                          </>
+                        ) : (
+                          <>
+                            <FiMapPin size={14} />
+                            Use my current GPS
+                          </>
+                        )}
+                      </button>
+                      {formData.lat != null && formData.lng != null && (
+                        <p className="mt-1 text-[11px] text-green-700">Captured: {formData.lat.toFixed(5)}, {formData.lng.toFixed(5)}</p>
+                      )}
+                      {gpsError && <p className="mt-1 text-[11px] text-red-600">{gpsError}</p>}
+                    </div>
+                  </>
+                )}
                 <button
                   type="submit"
                   disabled={submitting}
@@ -596,7 +818,7 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
                       type="button"
                       onClick={() => {
                         setAuthMode(authMode === 'login' ? 'register' : 'login')
-                        setFormData({ email: '', password: '', name: '', role: 'customer' })
+                        setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
                       }}
                       className="text-blue-600 font-semibold hover:text-blue-700"
                     >

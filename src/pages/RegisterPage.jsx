@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { FiEye, FiEyeOff, FiShoppingBag } from 'react-icons/fi'
+import { FiEye, FiEyeOff, FiShoppingBag, FiMapPin, FiCheckCircle } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import MarketingLayout from '../components/MarketingLayout'
 import { resolveAfterLogin } from '../utils/postLogin'
@@ -20,10 +20,42 @@ export default function RegisterPage() {
     role: 'customer',
     storeName: '',
     description: '',
+    lat: null,
+    lng: null,
   })
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsError, setGpsError] = useState('')
+
+  const captureGps = () => {
+    setGpsError('')
+    if (!('geolocation' in navigator)) {
+      setGpsError('Geolocation is not supported by your browser.')
+      return
+    }
+    setGpsLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((prev) => ({
+          ...prev,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }))
+        setGpsLoading(false)
+      },
+      (err) => {
+        setGpsLoading(false)
+        setGpsError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission denied. Please allow location access to register as a vendor.'
+            : 'Could not get your location. Please try again.'
+        )
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
+  }
 
   useEffect(() => {
     if (searchParams.get('vendor') === '1') {
@@ -36,6 +68,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    if (form.role === 'vendor' && (form.lat == null || form.lng == null)) {
+      setError('Please capture your GPS location to register as a vendor.')
+      return
+    }
     setSubmitting(true)
     try {
       const data = await register(form)
@@ -172,6 +208,45 @@ export default function RegisterPage() {
                       className={inputClass}
                       placeholder="Tell shoppers what you sell (optional)"
                     />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Store GPS location <span className="text-red-500">*</span>
+                    </label>
+                    <p className="mt-1 text-xs text-gray-600">
+                      We need your shop’s GPS location so customers nearby can find you. Admin approval requires this.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={captureGps}
+                      disabled={gpsLoading}
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-800 shadow-sm hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {gpsLoading ? (
+                        <>
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-green-700 border-t-transparent" />
+                          Getting location…
+                        </>
+                      ) : form.lat != null && form.lng != null ? (
+                        <>
+                          <FiCheckCircle size={16} />
+                          Update GPS location
+                        </>
+                      ) : (
+                        <>
+                          <FiMapPin size={16} />
+                          Use my current GPS
+                        </>
+                      )}
+                    </button>
+                    {form.lat != null && form.lng != null && (
+                      <p className="mt-2 text-xs text-green-700">
+                        Location captured: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+                      </p>
+                    )}
+                    {gpsError && (
+                      <p className="mt-2 text-xs text-red-600">{gpsError}</p>
+                    )}
                   </div>
                 </div>
               )}

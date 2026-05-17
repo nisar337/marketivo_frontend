@@ -47,7 +47,7 @@ export default function ContactPage() {
     <MarketingLayout activeNav="contact">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-blue-50/50 to-green-50/30 overflow-hidden border-b border-blue-100/50">
-        <div className="max-w-7xl mx-auto px-4 py-16 md:py-20 lg:py-24 grid md:grid-cols-2 items-center gap-12">
+        <div className="max-w-7xl mx-auto px-4 py-10 md:py-20 lg:py-5 grid md:grid-cols-2 items-center gap-12">
           <div className={`z-10 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-2">Contact Us</h1>
             <h2 className="text-3xl md:text-4xl font-bold text-green-600 mb-6">We're Here to Help!</h2>

@@ -486,6 +486,11 @@ export default function VendorsPage() {
                           </span>
                         )}
                       </div>
+                      {Number.isFinite(vendor.lat) && Number.isFinite(vendor.lng) && (
+                        <p className="text-xs text-gray-500 mt-0.5 font-mono">
+                          {vendor.lat.toFixed(5)}, {vendor.lng.toFixed(5)}
+                        </p>
+                      )}
                       {vendor.businessAddress && (
                         <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                           <FiMapPin size={14} />

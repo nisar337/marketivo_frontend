@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { FiSearch, FiGrid, FiArrowLeft } from 'react-icons/fi'
 import MarketingLayout from '../components/MarketingLayout'
@@ -7,6 +7,7 @@ import MarketingLayout from '../components/MarketingLayout'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export default function CategoriesPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,6 +31,18 @@ export default function CategoriesPage() {
     fetchCategories()
   }, [])
 
+  // Auto-select category from ?cat= URL param (e.g. from header dropdown)
+  useEffect(() => {
+    const catId = searchParams.get('cat')
+    if (!catId || categories.length === 0) return
+    if (selectedCategory?._id === catId) return
+    const match = categories.find((c) => c._id === catId)
+    if (match) {
+      handleCategoryClick(match)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, categories])
+
   const handleCategoryClick = async (category) => {
     setSelectedCategory(category)
     setLoadingProducts(true)
@@ -49,6 +62,11 @@ export default function CategoriesPage() {
     setSelectedCategory(null)
     setProducts([])
     setVisible(true)
+    if (searchParams.get('cat')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('cat')
+      setSearchParams(next, { replace: true })
+    }
   }
 
   const filteredProducts = products.filter((p) =>

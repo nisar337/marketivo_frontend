@@ -98,6 +98,11 @@ export default function VendorProfilePage() {
                   <h1 className="text-3xl font-bold">{vendor.storeName}</h1>
                   {(vendor.verified ?? vendor.status === 'approved') && <VerifiedBadge />}
                 </div>
+                {Number.isFinite(vendor.lat) && Number.isFinite(vendor.lng) && (
+                  <p className="text-xs text-blue-100 font-mono mb-2">
+                    GPS: {vendor.lat.toFixed(5)}, {vendor.lng.toFixed(5)}
+                  </p>
+                )}
                 {(vendor.verified ?? vendor.status === 'approved') && (
                   <p className="text-sm text-blue-100/90 mb-3">
                     <span className="font-semibold text-green-400">Verified</span> vendor — approved by Marketivo
