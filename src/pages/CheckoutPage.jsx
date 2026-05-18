@@ -98,7 +98,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <form onSubmit={handlePlaceOrder} className="grid gap-8 lg:grid-cols-5">
+        <form onSubmit={handlePlaceOrder} className="grid gap-6 lg:gap-8 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
                 Shipping Address
               </h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input
@@ -141,7 +141,7 @@ export default function CheckoutPage() {
                     placeholder="123 Main Street"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input
@@ -165,7 +165,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">ZIP/Postal Code</label>
                     <input

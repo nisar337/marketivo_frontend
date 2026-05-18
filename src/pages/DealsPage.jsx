@@ -105,7 +105,7 @@ export default function DealsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
               {filteredProducts.map((product, index) => (
                 <div
                   key={product._id}
@@ -118,11 +118,11 @@ export default function DealsPage() {
                         <img
                           src={product.images[0].url}
                           alt={product.name}
-                          className="w-full h-40 object-cover"
+                          className="w-full h-32 sm:h-40 object-cover"
                         />
                       ) : (
-                        <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">No image</span>
+                        <div className="w-full h-32 sm:h-40 bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-400 text-xs sm:text-sm">No image</span>
                         </div>
                       )}
                       {product.discountPrice && (

@@ -4,13 +4,86 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
-import { FiShoppingCart, FiMessageCircle, FiMapPin, FiSearch, FiHome, FiGrid, FiUsers, FiTag, FiInfo, FiPhone, FiCheck, FiCheckCircle, FiLock, FiRotateCcw, FiHeadphones, FiFacebook, FiInstagram, FiTwitter, FiLinkedin, FiEye, FiEyeOff, FiSun, FiMoon, FiUser, FiEdit, FiLogOut, FiLayout, FiChevronDown, FiX } from 'react-icons/fi'
+import { FiShoppingCart, FiMessageCircle, FiMapPin, FiSearch, FiHome, FiGrid, FiUsers, FiTag, FiInfo, FiPhone, FiCheck, FiCheckCircle, FiLock, FiHeadphones, FiFacebook, FiInstagram, FiTwitter, FiLinkedin, FiEye, FiEyeOff, FiSun, FiMoon, FiUser, FiEdit, FiLogOut, FiLayout, FiChevronDown, FiX, FiTruck, FiBook, FiMonitor, FiHeart, FiStar, FiMenu } from 'react-icons/fi'
+import { MdOutlineDirectionsCar, MdSportsBasketball } from 'react-icons/md'
 import { resolveAfterLogin } from '../utils/postLogin'
 import LogoutConfirmation from '../components/LogoutConfirmation'
 import ModernLoader from '../components/ModernLoader'
 import ShoppingLocationHeader from '../components/ShoppingLocationHeader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+// Inline dress icon (Fashion)
+const DressIcon = ({ size = 28, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M9 3h6l-1 3 3 4-2 2 3 9H6l3-9-2-2 3-4-1-3z" />
+  </svg>
+)
+
+// Inline gamepad icon (Toys & Games)
+const GamepadIcon = ({ size = 28, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <line x1="6" y1="11" x2="10" y2="11" />
+    <line x1="8" y1="9" x2="8" y2="13" />
+    <circle cx="15" cy="12" r="1" />
+    <circle cx="17.5" cy="10" r="1" />
+    <path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" />
+  </svg>
+)
+
+// Match a category by name to its display icon + color palette.
+const HOME_CATEGORY_PRESETS = [
+  { match: ['automotive', 'auto', 'car', 'vehicle'], bg: 'bg-blue-50', text: 'text-blue-500', Icon: MdOutlineDirectionsCar },
+  { match: ['electronics', 'electronic', 'gadget', 'tech'], bg: 'bg-emerald-50', text: 'text-emerald-500', Icon: FiMonitor },
+  { match: ['fashion', 'clothing', 'apparel', 'cloth'], bg: 'bg-pink-50', text: 'text-pink-500', Icon: DressIcon },
+  { match: ['home', 'garden', 'furniture', 'kitchen'], bg: 'bg-orange-50', text: 'text-orange-500', Icon: FiHome },
+  { match: ['health', 'beauty', 'wellness', 'cosmetic'], bg: 'bg-teal-50', text: 'text-teal-500', Icon: FiHeart },
+  { match: ['sport', 'outdoor', 'fitness', 'gym'], bg: 'bg-purple-50', text: 'text-purple-500', Icon: MdSportsBasketball },
+  { match: ['book', 'stationery', 'media'], bg: 'bg-amber-50', text: 'text-amber-500', Icon: FiBook },
+  { match: ['toy', 'game', 'kids', 'baby'], bg: 'bg-sky-50', text: 'text-sky-500', Icon: GamepadIcon },
+]
+
+const HOME_CATEGORY_FALLBACKS = [
+  { bg: 'bg-blue-50', text: 'text-blue-500', Icon: MdOutlineDirectionsCar },
+  { bg: 'bg-emerald-50', text: 'text-emerald-500', Icon: FiMonitor },
+  { bg: 'bg-pink-50', text: 'text-pink-500', Icon: DressIcon },
+  { bg: 'bg-orange-50', text: 'text-orange-500', Icon: FiHome },
+  { bg: 'bg-teal-50', text: 'text-teal-500', Icon: FiHeart },
+  { bg: 'bg-purple-50', text: 'text-purple-500', Icon: MdSportsBasketball },
+  { bg: 'bg-amber-50', text: 'text-amber-500', Icon: FiBook },
+  { bg: 'bg-sky-50', text: 'text-sky-500', Icon: GamepadIcon },
+]
+
+function getHomeCategoryStyle(name, index) {
+  const lower = String(name || '').toLowerCase()
+  const matched = HOME_CATEGORY_PRESETS.find((preset) =>
+    preset.match.some((token) => lower.includes(token))
+  )
+  if (matched) return matched
+  return HOME_CATEGORY_FALLBACKS[index % HOME_CATEGORY_FALLBACKS.length]
+}
 
 export default function HomePage() {
   const { user, logout, login } = useAuth()
@@ -61,6 +134,8 @@ export default function HomePage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [categorySearch, setCategorySearch] = useState('')
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
   const categoryRef = useRef(null)
 
   useEffect(() => {
@@ -251,11 +326,29 @@ export default function HomePage() {
   return (
     <div className="w-full bg-white overflow-x-hidden scrollbar-hide" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
       {/* Top Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Brand />
-          
-          <div className="flex-1 mx-8 flex items-center gap-2">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 lg:gap-4">
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu(true)}
+            className="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+            aria-label="Open menu"
+          >
+            <FiMenu size={22} />
+          </button>
+
+          <Link to="/" className="flex-shrink-0">
+            <Brand
+              size={36}
+              titleSizeClass="text-lg sm:text-xl lg:text-2xl"
+              taglineSizeClass="text-[10px] sm:text-xs"
+              showTagline={true}
+            />
+          </Link>
+
+          {/* Desktop search + category */}
+          <div className="hidden lg:flex flex-1 mx-4 lg:mx-8 items-center gap-2">
             <div ref={categoryRef} className="relative">
               <button
                 type="button"
@@ -264,7 +357,7 @@ export default function HomePage() {
                 aria-haspopup="listbox"
                 aria-expanded={showCategoryMenu}
               >
-                <FiGrid size={16} className="text-blue-600 transition-transform duration-200 group-hover:rotate-6" />
+               
                 <span className="font-medium truncate max-w-[160px]">
                   {activeHeaderCategory ? activeHeaderCategory.name : 'All Categories'}
                 </span>
@@ -371,15 +464,27 @@ export default function HomePage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <ShoppingLocationHeader />
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+            {/* Mobile search button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSearch(true)}
+              className="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+              aria-label="Search"
+            >
+              <FiSearch size={20} />
+            </button>
+
+            <div className="hidden sm:block">
+              <ShoppingLocationHeader />
+            </div>
             {user?.role !== 'vendor' && user?.role !== 'admin' && (
               <Link to="/cart" className="relative text-blue-600 font-semibold flex items-center gap-1">
-                <FiShoppingCart size={18} />
-                {cartCount > 0 && <span className="ml-1 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{cartCount}</span>}
+                <FiShoppingCart size={20} />
+                {cartCount > 0 && <span className="absolute -right-2 -top-2 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{cartCount}</span>}
               </Link>
             )}
-            <button className="text-gray-600 hover:text-gray-900">
+            <button className="hidden sm:inline-flex text-gray-600 hover:text-gray-900">
               <FiMessageCircle size={18} />
             </button>
             {user && user.role !== 'admin' ? (
@@ -387,14 +492,14 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-white transition-all hover:bg-blue-700 hover:scale-105"
+                  className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-white transition-all hover:bg-blue-700 hover:scale-105"
                 >
                   {user.role === 'customer' && user.avatarUrl?.trim?.() ? (
                     <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
                   ) : (user.role === 'vendor' || user.role === 'admin') && user.vendor?.logo?.trim?.() ? (
                     <img src={user.vendor.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <FiUser size={20} />
+                    <FiUser size={18} />
                   )}
                 </button>
                 
@@ -453,10 +558,10 @@ export default function HomePage() {
               </div>
             ) : (
               <>
-                <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} className="text-sm text-gray-600 hover:text-gray-900">
+                <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} className="hidden sm:inline-flex text-sm text-gray-600 hover:text-gray-900">
                   Login
                 </button>
-                <button onClick={() => { setAuthMode('register'); setShowAuthModal(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+                <button onClick={() => { setAuthMode('register'); setShowAuthModal(true); }} className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700">
                   Register
                 </button>
               </>
@@ -465,45 +570,173 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex gap-6">
-            <Link to="/" className="py-3  border-b-2 border-blue-600 text-gray-900 font-semibold flex items-center gap-2">
+      {/* Navigation Tabs (desktop & tablet) */}
+      <div className="hidden md:block bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-hide">
+          <div className="flex gap-4 lg:gap-6 whitespace-nowrap">
+            <Link to="/" className="py-3 border-b-2 border-blue-600 text-gray-900 font-semibold flex items-center gap-2 text-sm lg:text-base">
               <FiHome size={18} /> Home
             </Link>
-            <Link to="/categories" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2">
+            <Link to="/categories" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm lg:text-base">
               <FiGrid size={18} /> Categories
             </Link>
-            <Link to="/vendors" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2">
+            <Link to="/vendors" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm lg:text-base">
               <FiUsers size={18} /> Vendors
             </Link>
-            <Link to="/deals" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2">
+            <Link to="/deals" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm lg:text-base">
               <FiTag size={18} /> Deals
             </Link>
-            <Link to="/about" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2">
+            <Link to="/about" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm lg:text-base">
               <FiInfo size={18} /> About Us
             </Link>
-            <Link to="/contact" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2">
+            <Link to="/contact" className="py-3 text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm lg:text-base">
               <FiPhone size={18} /> Contact Us
             </Link>
           </div>
           <button
             onClick={toggleTheme}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30"
+            className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30"
             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <FiSun 
-              size={16} 
-              className={`absolute transition-all duration-300 ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`} 
+            <FiSun
+              size={16}
+              className={`absolute transition-all duration-300 ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}
             />
-            <FiMoon 
-              size={16} 
-              className={`absolute transition-all duration-300 ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`} 
+            <FiMoon
+              size={16}
+              className={`absolute transition-all duration-300 ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`}
             />
           </button>
         </div>
       </div>
+
+      {/* Mobile Search Drawer */}
+      {showMobileSearch && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm" onClick={() => setShowMobileSearch(false)}>
+          <div className="bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowMobileSearch(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+                aria-label="Close search"
+              >
+                <FiX size={22} />
+              </button>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search for products, vendors..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    navigate(`/?q=${encodeURIComponent(search.trim())}`)
+                    setShowMobileSearch(false)
+                  }
+                }}
+                className="flex-1 px-4 py-2.5 text-black border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigate(`/?q=${encodeURIComponent(search.trim())}`)
+                  setShowMobileSearch(false)
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                aria-label="Submit search"
+              >
+                <FiSearch size={18} />
+              </button>
+            </div>
+            <div className="mt-3 sm:hidden">
+              <ShoppingLocationHeader />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Nav Drawer */}
+      {showMobileMenu && (
+        <div className="lg:hidden fixed inset-0 z-50 flex" onClick={() => setShowMobileMenu(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" />
+          <div
+            className="relative bg-white w-72 max-w-[85vw] h-full shadow-2xl flex flex-col animate-slide-in-right"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: 'fadeInLeft 0.3s ease-out' }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <Brand size={32} titleSizeClass="text-base" taglineSizeClass="text-[10px]" />
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+                aria-label="Close menu"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-2">
+              {[
+                { to: '/', label: 'Home', Icon: FiHome, active: true },
+                { to: '/categories', label: 'Categories', Icon: FiGrid },
+                { to: '/vendors', label: 'Vendors', Icon: FiUsers },
+                { to: '/deals', label: 'Deals', Icon: FiTag },
+                { to: '/about', label: 'About Us', Icon: FiInfo },
+                { to: '/contact', label: 'Contact Us', Icon: FiPhone },
+              ].map(({ to, label, Icon, active }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`flex items-center gap-3 px-4 py-3 text-sm ${active ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Icon size={18} /> {label}
+                </Link>
+              ))}
+              <div className="my-2 border-t border-gray-200" />
+              <Link
+                to="/cart"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <FiShoppingCart size={18} /> Cart{cartCount > 0 && ` (${cartCount})`}
+              </Link>
+              {!user && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMobileMenu(false); setAuthMode('login'); setShowAuthModal(true); }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FiUser size={18} /> Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMobileMenu(false); setAuthMode('register'); setShowAuthModal(true); }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FiEdit size={18} /> Register
+                  </button>
+                </>
+              )}
+            </nav>
+            <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+              <span className="text-xs text-gray-500">{isDark ? 'Dark Mode' : 'Light Mode'}</span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                aria-label="Toggle theme"
+              >
+                <FiSun size={16} className={`absolute transition-all duration-300 ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`} />
+                <FiMoon size={16} className={`absolute transition-all duration-300 ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {alert && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
@@ -514,170 +747,357 @@ export default function HomePage() {
       )}
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 gap-8 items-center">
-          <div>
-            <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-4">
-              Support Local.<br/>Shop Local.<br/><span className="text-green-600">Grow Together.</span>
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-blue-50/60 to-indigo-50">
+        {/* Decorative dot pattern */}
+        <div
+          className="pointer-events-none absolute right-10 top-12 hidden h-24 w-24 opacity-40 md:block"
+          style={{
+            backgroundImage: 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)',
+            backgroundSize: '12px 12px',
+          }}
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute bottom-10 left-1/3 hidden h-20 w-20 opacity-40 md:block"
+          style={{
+            backgroundImage: 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)',
+            backgroundSize: '12px 12px',
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="max-w-7xl mx-auto px-4 py-2 grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative">
+          {/* Left: Copy */}
+          <div className="relative z-10">
+            {/* Support badge */}
+           
+
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-[1.1] mb-5 tracking-tight">
+              Support Local.<br />
+              Shop Local.<br />
+              <span className="text-green-600">Grow Together.</span>
             </h1>
-            <p className="text-gray-700 mb-6">
-              Marketivo connects you with trusted local vendors near you. Discover great products, amazing deals, and support your community.
+
+            <p className="text-gray-600 max-w-md leading-relaxed mb-7">
+              Marketivo connects you with trusted local vendors near you.
+              Discover great products, amazing deals, and support your community.
             </p>
-            <div className="flex gap-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2">
-                <FiShoppingCart size={18} /> Shop Now
-              </button>
-              <Link to="/vendors" className="border border-gray-300 text-gray-900 px-6 py-3 rounded-lg font-semibold flex items-center gap-2">
-                <FiSearch size={18} /> Explore Vendors
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/deals"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md"
+              >
+                <FiShoppingCart size={16} /> Shop Now
+              </Link>
+              <Link
+                to="/vendors"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 transition hover:border-gray-400 hover:bg-gray-50"
+              >
+                <FiUsers size={16} /> Explore Vendors
               </Link>
             </div>
           </div>
-          <div className="relative h-64 bg-gradient-to-b from-blue-100 to-transparent rounded-lg flex items-center justify-center overflow-hidden">
-            <svg viewBox="0 0 400 400" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              {/* Sky background */}
-              <rect width="400" height="400" fill="url(#skyGradient)" />
-              <defs>
-                <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style={{stopColor: '#e0f2fe', stopOpacity: 1}} />
-                  <stop offset="100%" style={{stopColor: '#f0f9ff', stopOpacity: 1}} />
-                </linearGradient>
-              </defs>
-              
-              {/* Buildings in background */}
-              <rect x="20" y="180" width="60" height="120" fill="#cbd5e1" opacity="0.3" />
-              <rect x="90" y="160" width="70" height="140" fill="#cbd5e1" opacity="0.3" />
-              <rect x="300" y="190" width="60" height="110" fill="#cbd5e1" opacity="0.3" />
-              <rect x="330" y="170" width="50" height="130" fill="#cbd5e1" opacity="0.3" />
-              
-              {/* Location pins */}
-              <circle cx="80" cy="100" r="12" fill="#16a34a" />
-              <circle cx="80" cy="100" r="8" fill="#22c55e" />
-              <circle cx="280" cy="80" r="12" fill="#2563eb" />
-              <circle cx="280" cy="80" r="8" fill="#3b82f6" />
-              
-              {/* Market stall */}
-              <rect x="120" y="200" width="160" height="120" fill="#f5f5f5" stroke="#d4d4d4" strokeWidth="2" />
-              
-              {/* Stall roof */}
-              <path d="M 120 200 L 200 140 L 280 200" fill="#16a34a" stroke="#15803d" strokeWidth="2" />
-              <path d="M 130 200 L 200 155 L 270 200" fill="#22c55e" />
-              
-              {/* Stall poles */}
-              <rect x="130" y="200" width="8" height="120" fill="#78350f" />
-              <rect x="262" y="200" width="8" height="120" fill="#78350f" />
-              
-              {/* Vendor - man */}
-              <circle cx="160" cy="240" r="18" fill="#f4a460" />
-              {/* Vendor head */}
-              <circle cx="160" cy="220" r="16" fill="#d4a574" />
-              {/* Vendor body */}
-              <rect x="150" y="240" width="20" height="35" fill="#22c55e" rx="3" />
-              {/* Vendor arms */}
-              <rect x="130" y="245" width="20" height="8" fill="#d4a574" rx="4" />
-              <rect x="170" y="245" width="20" height="8" fill="#d4a574" rx="4" />
-              {/* Vendor legs */}
-              <rect x="152" y="275" width="6" height="25" fill="#1f2937" />
-              <rect x="162" y="275" width="6" height="25" fill="#1f2937" />
-              
-              {/* Customer - woman */}
-              <circle cx="260" cy="240" r="18" fill="#fbbf24" />
-              {/* Customer head */}
-              <circle cx="260" cy="220" r="16" fill="#f59e0b" />
-              {/* Customer body */}
-              <rect x="250" y="240" width="20" height="35" fill="#fbbf24" rx="3" />
-              {/* Customer arms */}
-              <rect x="230" y="245" width="20" height="8" fill="#f59e0b" rx="4" />
-              <rect x="270" y="245" width="20" height="8" fill="#f59e0b" rx="4" />
-              {/* Customer legs */}
-              <rect x="252" y="275" width="6" height="25" fill="#1f2937" />
-              <rect x="262" y="275" width="6" height="25" fill="#1f2937" />
-              
-              {/* Produce baskets */}
-              <rect x="140" y="280" width="35" height="25" fill="#ea580c" stroke="#92400e" strokeWidth="1" />
-              <rect x="225" y="280" width="35" height="25" fill="#ea580c" stroke="#92400e" strokeWidth="1" />
-              
-              {/* Vegetables/Fruits in baskets */}
-              <circle cx="150" cy="275" r="4" fill="#dc2626" />
-              <circle cx="160" cy="275" r="4" fill="#dc2626" />
-              <circle cx="170" cy="275" r="4" fill="#dc2626" />
-              <circle cx="235" cy="275" r="4" fill="#22c55e" />
-              <circle cx="245" cy="275" r="4" fill="#22c55e" />
-              <circle cx="255" cy="275" r="4" fill="#22c55e" />
+
+          {/* Right: Phone Mockup with floating cards */}
+          <div className="relative h-[460px] hidden md:block">
+            {/* Soft city silhouette behind */}
+            <svg
+              className="pointer-events-none absolute inset-x-0 bottom-8 mx-auto  h-30 w-[90%] text-blue-100"
+              viewBox="0 0 400 120"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <rect x="20" y="60" width="40" height="60" />
+              <rect x="65" y="40" width="30" height="80" />
+              <rect x="100" y="55" width="50" height="65" />
+              <rect x="155" y="30" width="35" height="90" />
+              <rect x="195" y="50" width="40" height="70" />
+              <rect x="240" y="35" width="45" height="85" />
+              <rect x="290" y="55" width="35" height="65" />
+              <rect x="330" y="45" width="50" height="75" />
             </svg>
+
+            {/* Phone */}
+            <div className="absolute right-10 top-2 w-[260px] h-[440px] rounded-[2.5rem] bg-gray-900 p-2 shadow-2xl ring-1 ring-black/10">
+              <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-white">
+                {/* Notch */}
+                <div className="absolute left-1/2 top-2 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-gray-900" />
+
+                {/* Striped awning */}
+                <div className="relative h-12 w-full overflow-hidden">
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(90deg, #2563eb 0 16px, #ffffff 16px 32px)',
+                    }}
+                  />
+                  {/* Scallop bottom */}
+                  <svg
+                    className="absolute -bottom-px left-0 h-3 w-full text-white"
+                    viewBox="0 0 260 12"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M0 0 Q 13 12 26 0 T 52 0 T 78 0 T 104 0 T 130 0 T 156 0 T 182 0 T 208 0 T 234 0 T 260 0 V12 H0 Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+
+                {/* Search bar */}
+                <div className="px-3 pt-4">
+                  <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5">
+                    <FiSearch size={11} className="text-gray-400" />
+                    <span className="text-[10px] text-gray-400">Search products...</span>
+                  </div>
+                </div>
+
+                {/* Category circles */}
+                <div className="grid grid-cols-4 gap-2 px-3 pt-4">
+                  <div className="flex aspect-square items-center justify-center rounded-full bg-blue-100 text-blue-500">
+                    <DressIcon size={20} />
+                  </div>
+                  <div className="flex aspect-square items-center justify-center rounded-full bg-emerald-100 text-emerald-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M11 19c-4.97 0-9-4.03-9-9 0-1 .1-2 .3-2.9C8 8 11 12 11 19z" />
+                      <path d="M11 19c5 0 11-3 11-12-7 1-11 5-11 12z" />
+                    </svg>
+                  </div>
+                  <div className="flex aspect-square items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 8h14l-1 11H6L5 8z" />
+                      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+                    </svg>
+                  </div>
+                  <div className="flex aspect-square items-center justify-center rounded-full bg-pink-100 text-pink-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6 8h12l-1 12H7L6 8z" />
+                      <path d="M9 8a3 3 0 0 1 6 0" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Local Store card */}
+                <div className="mx-3 mt-4 rounded-lg border border-gray-100 bg-gray-50 p-2 shadow-sm">
+                  <div className="flex items-start gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-green-100 text-green-600">
+                      <FiHome size={14} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1">
+                        <p className="text-[11px] font-semibold text-gray-900">Local Store</p>
+                        <span className="inline-flex h-3 w-3 items-center justify-center rounded-full bg-blue-500">
+                          <FiCheck size={8} className="text-white" />
+                        </span>
+                        <span className="text-[8px] text-blue-500 font-medium">Verified</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[9px] text-gray-500">
+                        <FiStar size={8} className="fill-amber-400 text-amber-400" />
+                        <span>4.8 (230)</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[9px] text-gray-500">
+                        <FiMapPin size={8} className="text-gray-400" />
+                        <span>2.5 km away</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom: shopping bag + basket */}
+                <div className="absolute bottom-3 left-0 right-0 flex items-end justify-between px-3">
+                  {/* Produce basket */}
+                  <div className="relative">
+                    <div className="h-7 w-12 rounded-b-md bg-amber-700/90" />
+                    <div className="absolute -top-1 left-1 right-1 flex gap-0.5">
+                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                      <span className="h-2 w-2 rounded-full bg-orange-500" />
+                      <span className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                    </div>
+                  </div>
+                  {/* Shopping bag with pin */}
+                  <div className="relative">
+                    <div className="relative h-12 w-10 rounded-b-md bg-blue-500">
+                      <div className="absolute -top-1.5 left-1/2 h-2.5 w-5 -translate-x-1/2 rounded-t-full border-2 border-blue-500 border-b-0 bg-transparent" />
+                    </div>
+                    <div className="absolute -right-2 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shadow">
+                      <FiMapPin size={11} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Page indicator dots */}
+                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                  <span className="h-1 w-1 rounded-full bg-blue-500" />
+                  <span className="h-1 w-1 rounded-full bg-gray-300" />
+                  <span className="h-1 w-1 rounded-full bg-gray-300" />
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Card: Fast Delivery */}
+            <div className="absolute left-0 top-16 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
+                <FiTruck size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">Fast Delivery</p>
+                <p className="text-[10px] text-gray-500">On Time</p>
+              </div>
+            </div>
+
+            {/* Floating Card: Secure Payment */}
+            <div className="absolute left-4 bottom-24 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
+                <FiLock size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">Secure Payment</p>
+                <p className="text-[10px] text-gray-500">100% Safe</p>
+              </div>
+            </div>
+
+            {/* Floating Card: 24/7 Support */}
+            <div className="absolute right-0 top-24 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
+                <FiHeadphones size={16} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">24/7 Support</p>
+                <p className="text-[10px] text-gray-500">We&apos;re Here</p>
+              </div>
+            </div>
+
+            {/* Tiny accent dots */}
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-green-500" aria-hidden="true" />
+            <span className="absolute right-20 top-2 h-2 w-2 rounded-full bg-blue-500" aria-hidden="true" />
           </div>
         </div>
-      </div>
-
-      {/* Features */}
-      <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-4 gap-4">
-        <div className="text-center">
-          <FiMapPin size={32} className="mx-auto mb-2 text-blue-600" />
-          <p className="font-semibold text-gray-900">Local Vendors Near You</p>
-        </div>
-        <div className="text-center">
-          <FiLock size={32} className="mx-auto mb-2 text-blue-600" />
-          <p className="font-semibold text-gray-900">Secure Payments</p>
-        </div>
-        <div className="text-center">
-          <FiShoppingCart size={32} className="mx-auto mb-2 text-blue-600" />
-          <p className="font-semibold text-gray-900">Fast & Reliable Delivery</p>
-        </div>
-        <div className="text-center">
-          <FiHeadphones size={32} className="mx-auto mb-2 text-blue-600" />
-          <p className="font-semibold text-gray-900">24/7 Customer Support</p>
-        </div>
-      </div>
+      </section>
 
       {/* Shop by Categories */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Shop by Categories</h2>
-          <Link to="/categories" className="text-blue-600 font-semibold">View All Categories →</Link>
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-10">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Shop by Categories</h2>
+          <Link to="/categories" className="text-blue-600 font-semibold text-xs sm:text-sm hover:underline whitespace-nowrap">
+            View All →
+          </Link>
         </div>
-        <div className="grid grid-cols-6 gap-4">
-          {categories.slice(0, 6).map((c) => (
-            <div key={c._id} className="text-center p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-              <FiGrid size={32} className="mx-auto mb-2 text-blue-600" />
-              <p className="font-semibold text-gray-900">{c.name}</p>
-              <p className="text-xs text-gray-600">120+ Products</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+          {(categories.length > 0
+            ? categories.slice(0, 8)
+            : Array.from({ length: 8 })
+          ).map((c, idx) => {
+            const placeholderNames = [
+              'Automotive', 'Electronics', 'Fashion', 'Home & Garden',
+              'Health & Beauty', 'Sports & Outdoors', 'Books', 'Toys & Games',
+            ]
+            const placeholderCounts = [
+              '1,245+', '3,210+', '4,560+', '3,120+',
+              '2,890+', '1,870+', '2,340+', '1,450+',
+            ]
+            const name = c?.name || placeholderNames[idx]
+            const style = getHomeCategoryStyle(name, idx)
+            const Icon = style.Icon
+            const productLabel = c
+              ? `${placeholderCounts[idx] || '120+'} Products`
+              : `${placeholderCounts[idx]} Products`
+            const target = c?._id ? `/categories?cat=${c._id}` : '/categories'
+            return (
+              <Link
+                key={c?._id || `placeholder-${idx}`}
+                to={target}
+                className="group flex flex-col items-center text-center p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className={`mb-3 flex h-14 w-14 items-center justify-center rounded-full ${style.bg} ${style.text} transition-transform duration-200 group-hover:scale-110`}>
+                  <Icon size={26} />
+                </div>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">{name}</p>
+                <p className="mt-1 text-[11px] text-gray-500">{productLabel}</p>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Trust Features (4 cards with circular icon backgrounds) */}
+      <div className="max-w-7xl mx-auto px-4 pb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <FiMapPin size={20} />
             </div>
-          ))}
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Local Vendors Near You</p>
+              <p className="text-xs text-gray-500">Find trusted local vendors<br />in your area</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <FiLock size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Secure Payments</p>
+              <p className="text-xs text-gray-500">100% secure payment<br />guaranteed</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <FiTruck size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Fast &amp; Reliable Delivery</p>
+              <p className="text-xs text-gray-500">Quick delivery to<br />your doorstep</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <FiHeadphones size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">24/7 Customer Support</p>
+              <p className="text-xs text-gray-500">We&apos;re always here<br />to help you</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Featured Products */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Featured Products</h2>
-          <Link to="/deals" className="text-blue-600 font-semibold">View All Products →</Link>
+        <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Featured Products</h2>
+          <Link to="/deals" className="text-blue-600 font-semibold text-xs sm:text-sm whitespace-nowrap">View All →</Link>
         </div>
         {loading ? (
           <div className="flex justify-center py-12">
             <ModernLoader size={56} label="Loading products…" />
           </div>
         ) : (
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {products.slice(0, 6).map((p) => (
               <Link key={p._id} to={`/product/${p._id}`} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow block">
                 {p.images?.[0] ? (
-                  <img src={p.images[0].url} alt={p.name} className="w-full h-40 object-cover" />
+                  <img src={p.images[0].url} alt={p.name} className="w-full h-32 sm:h-40 object-cover" />
                 ) : (
-                  <div className="w-full h-40 bg-gray-200 flex items-center justify-center">No image</div>
+                  <div className="w-full h-32 sm:h-40 bg-gray-200 flex items-center justify-center text-xs">No image</div>
                 )}
-                <div className="p-3">
-                  <h3 className="font-semibold text-gray-900 text-sm truncate">{p.name}</h3>
-                  <p className="text-xs text-gray-600">{p.category?.name || 'Product'}</p>
-                  <div className="flex items-center gap-2 mt-2">
+                <div className="p-2 sm:p-3">
+                  <h3 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{p.name}</h3>
+                  <p className="text-[10px] sm:text-xs text-gray-600 truncate">{p.category?.name || 'Product'}</p>
+                  <div className="flex items-center gap-1 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
                     {p.discountPrice ? (
                       <>
-                        <span className="font-bold text-gray-900">Rs. {p.discountPrice}</span>
-                        <span className="text-xs text-gray-500 line-through">Rs. {p.price}</span>
+                        <span className="font-bold text-gray-900 text-xs sm:text-sm">Rs. {p.discountPrice}</span>
+                        <span className="text-[10px] sm:text-xs text-gray-500 line-through">Rs. {p.price}</span>
                       </>
                     ) : (
-                      <span className="font-bold text-gray-900">Rs. {p.price}</span>
+                      <span className="font-bold text-gray-900 text-xs sm:text-sm">Rs. {p.price}</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                  <div className="flex items-center gap-1 mt-1 text-[10px] sm:text-xs text-gray-600">
                     <span>⭐</span>
                     <span>4.5 (120)</span>
                   </div>
@@ -685,7 +1105,7 @@ export default function HomePage() {
                     <button
                       onClick={() => addToCart(p)}
                       disabled={p.stockQuantity < 1}
-                      className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 rounded disabled:opacity-50"
+                      className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-[11px] sm:text-xs font-semibold py-1.5 rounded disabled:opacity-50"
                     >
                       Add to Cart
                     </button>
@@ -699,50 +1119,26 @@ export default function HomePage() {
 
       {/* AI Assistant Banner */}
       <div className="bg-slate-900 text-white py-6 my-4">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <FiMessageCircle size={40} />
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <FiMessageCircle size={36} className="flex-shrink-0" />
             <div>
-              <h3 className="font-bold text-lg">Need Help? Ask Our AI Assistant</h3>
-              <p className="text-sm text-gray-300">Get instant answers to your questions.</p>
+              <h3 className="font-bold text-base sm:text-lg">Need Help? Ask Our AI Assistant</h3>
+              <p className="text-xs sm:text-sm text-gray-300">Get instant answers to your questions.</p>
             </div>
           </div>
-          <button className="bg-white text-slate-900 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100">
+          <button className="bg-white text-slate-900 px-5 sm:px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 text-sm whitespace-nowrap">
             Chat Now →
           </button>
         </div>
       </div>
 
-      {/* Trust Section */}
-      <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-4 gap-4">
-        <div className="text-center">
-          <FiCheck size={32} className="mx-auto mb-2 text-green-600" />
-          <p className="font-semibold text-gray-900">Trusted Local Vendors</p>
-          <p className="text-xs text-gray-600">Verified and reliable sellers</p>
-        </div>
-        <div className="text-center">
-          <FiLock size={32} className="mx-auto mb-2 text-green-600" />
-          <p className="font-semibold text-gray-900">Secure Payments</p>
-          <p className="text-xs text-gray-600">100% safe and secure</p>
-        </div>
-        <div className="text-center">
-          <FiRotateCcw size={32} className="mx-auto mb-2 text-green-600" />
-          <p className="font-semibold text-gray-900">Easy Returns</p>
-          <p className="text-xs text-gray-600">Hassle-free return policy</p>
-        </div>
-        <div className="text-center">
-          <FiHeadphones size={32} className="mx-auto mb-2 text-green-600" />
-          <p className="font-semibold text-gray-900">Customer Support</p>
-          <p className="text-xs text-gray-600">We're here to help 24/7</p>
-        </div>
-      </div>
-
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-6 mt-4">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-5   mb-3">
-          <div>
-            <div className="flex  items-center gap-2 mb-2">
-              <Brand size={28} titleSizeClass="  text-sm " taglineSizeClass="text-xs" showTagline={false} />
+      <footer className="bg-gray-900 text-white py-8 mt-4">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 mb-6">
+          <div className="col-span-2 sm:col-span-3 md:col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Brand size={28} titleSizeClass="text-sm" taglineSizeClass="text-xs" showTagline={false} />
             </div>
             <p className="text-xs text-gray-400 mb-2">Best choice for local vendors</p>
             <div className="flex gap-2">
@@ -787,18 +1183,17 @@ export default function HomePage() {
               <li><Link to="/registration" className="hover:text-white">Vendor Support</Link></li>
             </ul>
           </div>
-          <div>
+          <div className="col-span-2 sm:col-span-3 md:col-span-1">
             <p className="font-semibold text-sm mb-2">Newsletter</p>
             <p className="text-xs text-gray-400 mb-2">Subscribe for updates</p>
-            <div className="flex mr-6">
-              <input type="email" placeholder="Email" className="flex-1 px-2 py-1 bg-gray-800 text-white text-xs rounded-l" />
-              <button className="bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-semibold rounded-r">Sub</button>
+            <div className="flex">
+              <input type="email" placeholder="Email" className="flex-1 min-w-0 px-2 py-1.5 bg-gray-800 text-white text-xs rounded-l" />
+              <button className="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-semibold rounded-r whitespace-nowrap">Subscribe</button>
             </div>
           </div>
         </div>
-        <div className="px-4 border-t border-gray-800 pt-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 border-t border-gray-800 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-gray-400">© 2026 Marketivo. All rights reserved.</p>
-         
         </div>
       </footer>
 
@@ -811,8 +1206,8 @@ export default function HomePage() {
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`w-96 bg-white h-[70vh] shadow-2xl overflow-y-auto rounded-l-lg scrollbar-hide transform transition-all duration-300 ease-out ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+        <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
+          <div className={`w-full max-w-md bg-white max-h-[90vh] shadow-2xl overflow-y-auto rounded-lg scrollbar-hide transform transition-all duration-300 ease-out ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`} style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
             <div className="p-6 h-full flex flex-col">
               {/* Close Button */}
               <div className="flex items-center justify-between mb-6">

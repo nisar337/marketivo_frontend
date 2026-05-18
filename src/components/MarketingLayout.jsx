@@ -34,13 +34,14 @@ import {
   FiCheckCircle,
   FiChevronDown,
   FiX,
+  FiMenu,
 } from 'react-icons/fi'
 import { resolveAfterLogin } from '../utils/postLogin'
 import ShoppingLocationHeader from './ShoppingLocationHeader'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-export function Brand({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass = 'text-xs', showTagline = true }) {
+export function Brand({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass = 'text-xs', showTagline = true, dark = false }) {
   return (
     <div className="flex items-center gap-2">
       <svg
@@ -77,8 +78,8 @@ export function Brand({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass
       </svg>
       <div className="leading-tight">
         <p className={`font-bold ${titleSizeClass}`}>
-          <span className="text-gray-900">Market</span>
-          <span className="text-green-600">ivo</span>
+          <span className={dark ? 'text-white' : 'text-gray-900'}>Market</span>
+          <span className="text-green-500">ivo</span>
         </p>
         {showTagline && <p className={`${taglineSizeClass} text-gray-500`}>Best choice for local vendors</p>}
       </div>
@@ -141,6 +142,8 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [categorySearch, setCategorySearch] = useState('')
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
   const categoryRef = useRef(null)
 
   useEffect(() => {
@@ -268,13 +271,24 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
 
   return (
     <div className="w-full bg-white overflow-x-hidden scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-3">
-          <Link to="/">
-            <Brand />
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 lg:gap-4">
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu(true)}
+            className="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+            aria-label="Open menu"
+          >
+            <FiMenu size={22} />
+          </button>
+
+          <Link to="/" className="flex-shrink-0">
+            <Brand size={36} titleSizeClass="text-lg sm:text-xl lg:text-2xl" taglineSizeClass="text-[10px] sm:text-xs" />
           </Link>
 
-          <div className="flex-1 min-w-[200px] mx-4 flex items-center gap-2 flex-wrap">
+          {/* Desktop search + category */}
+          <div className="hidden lg:flex flex-1 min-w-[200px] mx-4 items-center gap-2">
             <div ref={categoryRef} className="relative">
               <button
                 type="button"
@@ -390,17 +404,29 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <ShoppingLocationHeader />
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+            {/* Mobile search button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileSearch(true)}
+              className="lg:hidden flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+              aria-label="Search"
+            >
+              <FiSearch size={20} />
+            </button>
+
+            <div className="hidden sm:block">
+              <ShoppingLocationHeader />
+            </div>
             {user?.role !== 'vendor' && user?.role !== 'admin' && (
               <Link to="/cart" className="relative text-blue-600 font-semibold flex items-center gap-1">
-                <FiShoppingCart size={18} />
+                <FiShoppingCart size={20} />
                 {cartCount > 0 && (
-                  <span className="ml-1 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{cartCount}</span>
+                  <span className="absolute -right-2 -top-2 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{cartCount}</span>
                 )}
               </Link>
             )}
-            <button type="button" className="text-gray-600 hover:text-gray-900">
+            <button type="button" className="hidden sm:inline-flex text-gray-600 hover:text-gray-900">
               <FiMessageCircle size={18} />
             </button>
             {user && user.role !== 'admin' ? (
@@ -479,10 +505,10 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
               </div>
             ) : (
               <>
-                <button type="button" onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} className="text-sm text-gray-600 hover:text-gray-900">
+                <button type="button" onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} className="hidden sm:inline-flex text-sm text-gray-600 hover:text-gray-900">
                   Login
                 </button>
-                <button type="button" onClick={() => { setAuthMode('register'); setShowAuthModal(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+                <button type="button" onClick={() => { setAuthMode('register'); setShowAuthModal(true); }} className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700">
                   Register
                 </button>
               </>
@@ -491,9 +517,10 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex gap-6 lg:gap-8 flex-wrap">
+      {/* Desktop / Tablet Nav Tabs */}
+      <div className="hidden md:block bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-hide gap-2">
+          <div className="flex gap-4 lg:gap-6 whitespace-nowrap">
             <Link to="/" className={navLinkClass(activeNav === 'home')}>
               <FiHome size={18} /> Home
             </Link>
@@ -516,7 +543,7 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
           <button
             type="button"
             onClick={toggleTheme}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30"
+            className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30"
             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
             <FiSun size={16} className={`absolute transition-all duration-300 ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`} />
@@ -524,6 +551,131 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
           </button>
         </div>
       </div>
+
+      {/* Mobile Search Drawer */}
+      {showMobileSearch && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm" onClick={() => setShowMobileSearch(false)}>
+          <div className="bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowMobileSearch(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+                aria-label="Close search"
+              >
+                <FiX size={22} />
+              </button>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search for products, vendors..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleSearch()
+                    setShowMobileSearch(false)
+                  }
+                }}
+                className="flex-1 px-4 py-2.5 text-black border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => { handleSearch(); setShowMobileSearch(false) }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                aria-label="Submit search"
+              >
+                <FiSearch size={18} />
+              </button>
+            </div>
+            <div className="mt-3 sm:hidden">
+              <ShoppingLocationHeader />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Nav Drawer */}
+      {showMobileMenu && (
+        <div className="md:hidden fixed inset-0 z-50 flex" onClick={() => setShowMobileMenu(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" />
+          <div
+            className="relative bg-white w-72 max-w-[85vw] h-full shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: 'fadeInLeft 0.3s ease-out' }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <Brand size={32} titleSizeClass="text-base" taglineSizeClass="text-[10px]" />
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+                aria-label="Close menu"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-2">
+              {[
+                { to: '/', label: 'Home', Icon: FiHome, key: 'home' },
+                { to: '/categories', label: 'Categories', Icon: FiGrid, key: 'categories' },
+                { to: '/vendors', label: 'Vendors', Icon: FiUsers, key: 'vendors' },
+                { to: '/deals', label: 'Deals', Icon: FiTag, key: 'deals' },
+                { to: '/about', label: 'About Us', Icon: FiInfo, key: 'about' },
+                { to: '/contact', label: 'Contact Us', Icon: FiPhone, key: 'contact' },
+              ].map(({ to, label, Icon, key }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`flex items-center gap-3 px-4 py-3 text-sm ${activeNav === key ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Icon size={18} /> {label}
+                </Link>
+              ))}
+              <div className="my-2 border-t border-gray-200" />
+              <Link
+                to="/cart"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <FiShoppingCart size={18} /> Cart{cartCount > 0 && ` (${cartCount})`}
+              </Link>
+              {!user && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMobileMenu(false); setAuthMode('login'); setShowAuthModal(true); }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FiUser size={18} /> Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMobileMenu(false); setAuthMode('register'); setShowAuthModal(true); }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <FiEdit size={18} /> Register
+                  </button>
+                </>
+              )}
+            </nav>
+            <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+              <span className="text-xs text-gray-500">{isDark ? 'Dark Mode' : 'Light Mode'}</span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                aria-label="Toggle theme"
+              >
+                <FiSun size={16} className={`absolute transition-all duration-300 ${isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`} />
+                <FiMoon size={16} className={`absolute transition-all duration-300 ${isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {banner}
 
@@ -556,7 +708,7 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-5 gap-8 mb-6">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-2">
-              <Brand size={28} titleSizeClass="text-sm" taglineSizeClass="text-xs" showTagline={false} />
+              <Brand size={28} titleSizeClass="text-sm" taglineSizeClass="text-xs" showTagline={false} dark />
             </div>
             <p className="text-xs text-gray-400 mb-3">Best choice for local vendors</p>
             <div className="flex gap-3">
@@ -671,8 +823,8 @@ export default function MarketingLayout({ activeNav = 'home', children, topBanne
       </footer>
 
       {showAuthModal && (
-        <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`w-96 bg-white max-h-[85vh] shadow-2xl overflow-y-auto rounded-lg scrollbar-hide transform transition-all duration-300 ease-out ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
+          <div className={`w-full max-w-md bg-white max-h-[90vh] shadow-2xl overflow-y-auto rounded-lg scrollbar-hide transform transition-all duration-300 ease-out ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="p-6 flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">{authMode === 'login' ? 'Sign In' : 'Create Account'}</h2>

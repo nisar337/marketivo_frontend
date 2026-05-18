@@ -130,18 +130,18 @@ export default function AboutPage() {
                 Today we work with sellers across categories, from fresh food to fashion, helping them reach new customers without losing what makes them special—their personality, their craft, and their connection to the community.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <p className="text-2xl font-bold text-blue-600">500+</p>
-                <p className="text-xs font-medium text-gray-600 mt-1">Local vendors</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-3 sm:p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">500+</p>
+                <p className="text-[10px] sm:text-xs font-medium text-gray-600 mt-1">Local vendors</p>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-green-50 to-white p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <p className="text-2xl font-bold text-green-600">50k+</p>
-                <p className="text-xs font-medium text-gray-600 mt-1">Happy orders</p>
+              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-green-50 to-white p-3 sm:p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <p className="text-xl sm:text-2xl font-bold text-green-600">50k+</p>
+                <p className="text-[10px] sm:text-xs font-medium text-gray-600 mt-1">Happy orders</p>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <p className="text-2xl font-bold text-blue-600">24/7</p>
-                <p className="text-xs font-medium text-gray-600 mt-1">Support</p>
+              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-3 sm:p-4 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">24/7</p>
+                <p className="text-[10px] sm:text-xs font-medium text-gray-600 mt-1">Support</p>
               </div>
             </div>
           </div>

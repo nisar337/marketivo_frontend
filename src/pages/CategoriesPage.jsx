@@ -275,42 +275,7 @@ function HeroBanner() {
           />
         ))}
       </div>
-      <div className="relative max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
-        <div className="text-white max-w-lg">
-          <h1 className="text-5xl font-extrabold mb-3 leading-tight">Categories</h1>
-          <p className="text-indigo-200 text-base leading-relaxed">
-            Browse products by category and find the best<br />local vendors near you.
-          </p>
-        </div>
-        <div className="hidden md:flex items-end gap-4 relative" style={{ height: 180 }}>
-          <div className="absolute" style={{ right: 120, bottom: 10, transform: 'rotate(-12deg)' }}>
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
-              <FiCamera size={26} className="text-white" />
-            </div>
-          </div>
-          <div className="absolute" style={{ right: 0, bottom: 60, transform: 'rotate(8deg)' }}>
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
-              <MdSportsBasketball size={26} className="text-white" />
-            </div>
-          </div>
-          <div className="relative z-10">
-            <div className="w-36 h-40 rounded-3xl flex flex-col items-center justify-center shadow-2xl" style={{ background: 'linear-gradient(160deg, #6366f1, #8b5cf6)' }}>
-              <div className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center mb-2">
-                <FiShoppingCart size={36} className="text-white" />
-              </div>
-              <div className="flex gap-1.5">
-                <div className="w-5 h-5 rounded-full bg-white/30" />
-                <div className="w-5 h-5 rounded-full bg-white/30" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute" style={{ left: -40, top: 10, transform: 'rotate(-8deg)' }}>
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
-              <FiMonitor size={26} className="text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
+    
     </div>
   )
 }

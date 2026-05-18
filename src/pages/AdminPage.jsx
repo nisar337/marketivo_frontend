@@ -336,39 +336,39 @@ function AdminPanel() {
         )}
 
         {!vendorProfile && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setActiveView('vendors')}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
                 activeView === 'vendors'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <FiShoppingBag size={18} /> View Vendors
+              <FiShoppingBag size={16} /> <span className="hidden sm:inline">View </span>Vendors
             </button>
             <button
               type="button"
               onClick={() => setActiveView('customers')}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
                 activeView === 'customers'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <FiUsers size={18} /> View Customers
+              <FiUsers size={16} /> <span className="hidden sm:inline">View </span>Customers
             </button>
             <button
               type="button"
               onClick={() => setActiveView('orders')}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
                 activeView === 'orders'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
             >
-              <FiShoppingCart size={18} /> View Orders
+              <FiShoppingCart size={16} /> <span className="hidden sm:inline">View </span>Orders
             </button>
           </div>
         )}

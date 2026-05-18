@@ -21,6 +21,7 @@ import {
   FiPhone,
   FiMail,
   FiChevronRight,
+  FiMenu,
 } from 'react-icons/fi'
 import { MdStorefront } from 'react-icons/md'
 import LogoutConfirmation from '../components/LogoutConfirmation'
@@ -61,6 +62,13 @@ export default function VendorDashboard() {
   const [locationUpdateSuccess, setLocationUpdateSuccess] = useState(false)
   const profileMenuRef = useRef(null)
   const showProfileMenu = profileMenuOpen || profileMenuHover
+  const [showSidebar, setShowSidebar] = useState(false)
+
+  // Helper to navigate + auto-close mobile sidebar
+  const goToView = (view) => {
+    setActiveView(view)
+    setShowSidebar(false)
+  }
 
   const viewTitles = {
     dashboard: 'Dashboard',
@@ -306,8 +314,19 @@ export default function VendorDashboard() {
 
   return (
     <div className="w-full bg-white overflow-x-hidden">
-      <div className="flex h-screen">
-        <aside className="w-64 bg-slate-900 text-white p-6 overflow-y-auto">
+      <div className="flex h-screen relative">
+        {/* Mobile sidebar backdrop */}
+        {showSidebar && (
+          <div
+            className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+        <aside
+          className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white p-6 overflow-y-auto transition-transform duration-300 lg:translate-x-0 ${
+            showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
+        >
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-xl font-bold">
               <MdStorefront size={24} />
@@ -317,7 +336,7 @@ export default function VendorDashboard() {
 
           <nav className="space-y-2">
             <button
-              onClick={() => setActiveView('dashboard')}
+              onClick={() => goToView('dashboard')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'dashboard'
                   ? 'bg-blue-600 text-white'
@@ -327,7 +346,7 @@ export default function VendorDashboard() {
               <FiBarChart2 size={18} /> Dashboard
             </button>
             <button
-              onClick={() => setActiveView('products')}
+              onClick={() => goToView('products')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'products'
                   ? 'bg-blue-600 text-white'
@@ -337,7 +356,7 @@ export default function VendorDashboard() {
               <FiPackage size={18} /> Products
             </button>
             <button
-              onClick={() => setActiveView('orders')}
+              onClick={() => goToView('orders')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'orders'
                   ? 'bg-blue-600 text-white'
@@ -347,7 +366,7 @@ export default function VendorDashboard() {
               <FiShoppingCart size={18} /> Orders
             </button>
             <button
-              onClick={() => setActiveView('customers')}
+              onClick={() => goToView('customers')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'customers'
                   ? 'bg-blue-600 text-white'
@@ -357,7 +376,7 @@ export default function VendorDashboard() {
               <FiUsers size={18} /> Customers
             </button>
             <button
-              onClick={() => setActiveView('messages')}
+              onClick={() => goToView('messages')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'messages'
                   ? 'bg-blue-600 text-white'
@@ -367,7 +386,7 @@ export default function VendorDashboard() {
               <FiMessageSquare size={18} /> Messages
             </button>
             <button
-              onClick={() => setActiveView('reviews')}
+              onClick={() => goToView('reviews')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'reviews'
                   ? 'bg-blue-600 text-white'
@@ -377,7 +396,7 @@ export default function VendorDashboard() {
               <FiStar size={18} /> Reviews
             </button>
             <button
-              onClick={() => setActiveView('reports')}
+              onClick={() => goToView('reports')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'reports'
                   ? 'bg-blue-600 text-white'
@@ -387,7 +406,7 @@ export default function VendorDashboard() {
               <FiTrendingUp size={18} /> Reports
             </button>
             <button
-              onClick={() => setActiveView('settings')}
+              onClick={() => goToView('settings')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
                 activeView === 'settings'
                   ? 'bg-blue-600 text-white'
@@ -422,7 +441,17 @@ export default function VendorDashboard() {
             </div>
           )}
           <header className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 z-20">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{viewTitles[activeView] || 'Dashboard'}</h1>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSidebar(true)}
+                className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
+                aria-label="Open menu"
+              >
+                <FiMenu size={20} />
+              </button>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">{viewTitles[activeView] || 'Dashboard'}</h1>
+            </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <div
                 className="relative"
@@ -493,7 +522,7 @@ export default function VendorDashboard() {
           <div className="flex-1 overflow-y-auto p-4">
             {activeView === 'dashboard' && (
             <div>
-              <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                 <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <p className="text-gray-600 text-xs font-medium mb-1">Total Sales</p>
                   <p className="text-2xl font-bold text-gray-900 mb-1">Rs. {totalSales.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
@@ -531,8 +560,8 @@ export default function VendorDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div className="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <h2 className="text-sm font-bold text-gray-900 mb-3">Sales Overview</h2>
                   <div className="h-40 flex items-end justify-between gap-1">
                     {[10, 20, 15, 30, 25, 35, 40].map((height, i) => (
@@ -775,7 +804,7 @@ export default function VendorDashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.) *</label>
                     <input
@@ -803,7 +832,7 @@ export default function VendorDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
                     <input
@@ -1085,7 +1114,7 @@ export default function VendorDashboard() {
                     rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
@@ -1178,7 +1207,7 @@ export default function VendorDashboard() {
                     rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.)</label>
                     <input
