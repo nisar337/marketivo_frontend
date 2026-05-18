@@ -61,17 +61,19 @@ export function Brand({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass
         />
         <path d="M16.5 41.5c-4.1 0-5.8-2.2 0-2.2 3.2 0 3.1 2.2 0 2.2Z" fill="#16a34a" />
         <path d="M31.5 41.5c4.1 0 5.8-2.2 0-2.2-3.2 0-3.1 2.2 0 2.2Z" fill="#16a34a" />
-        <path
-          d="M17 14h4l1.5 12.5h11L35 14H21"
-          stroke="#16a34a"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path d="M22 17.5h11.2" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M22.6 21h10" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
-        <circle cx="23.5" cy="31" r="1.7" fill="#16a34a" />
-        <circle cx="30.8" cy="31" r="1.7" fill="#16a34a" />
+        <g transform="translate(-2 0)">
+          <path
+            d="M17 14h4l1.5 12.5h11L35 14H21"
+            stroke="#16a34a"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M22 17.5h11.2" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M22.6 21h10" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
+          <circle cx="23.5" cy="31" r="1.7" fill="#16a34a" />
+          <circle cx="30.8" cy="31" r="1.7" fill="#16a34a" />
+        </g>
       </svg>
       <div className="leading-tight">
         <p className={`font-bold ${titleSizeClass}`}>

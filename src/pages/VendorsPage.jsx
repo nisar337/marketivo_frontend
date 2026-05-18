@@ -42,6 +42,7 @@ export default function VendorsPage() {
 
   const [listMode, setListMode] = useState('all')
   const [radiusKm, setRadiusKm] = useState(25)
+  const [gpsError, setGpsError] = useState('')
 
   const [locQuery, setLocQuery] = useState('')
   const [locSuggestions, setLocSuggestions] = useState([])
@@ -148,13 +149,15 @@ export default function VendorsPage() {
     }
   }
 
-  const useBrowserLocation = () => {
+  const useBrowserLocation = (autoSwitchNearby = false) => {
     if (!navigator.geolocation) {
       setLocMsg('Location is not supported in this browser.')
+      setGpsError('Location is not supported in this browser.')
       return
     }
     setLocBusy(true)
     setLocMsg('')
+    setGpsError('')
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude
@@ -164,8 +167,8 @@ export default function VendorsPage() {
           const resolved = data.location
           await applyShoppingLocation({
             label: resolved?.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-            lat: resolved.lat,
-            lng: resolved.lng,
+            lat: resolved.lat ?? lat,
+            lng: resolved.lng ?? lng,
           })
         } catch {
           await applyShoppingLocation({
@@ -174,12 +177,19 @@ export default function VendorsPage() {
             lng,
           })
         }
+        if (autoSwitchNearby) setListMode('nearby')
       },
-      () => {
-        setLocMsg('Allow browser location permission, or pick a place from search.')
+      (err) => {
+        const msg =
+          err.code === 1
+            ? 'Location permission denied. Please allow it in your browser settings, or search for an area manually.'
+            : 'Could not get your location. Try searching for a city name instead.'
+        setLocMsg(msg)
+        setGpsError(msg)
+        setShowLocPanel(true)
         setLocBusy(false)
       },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
   }
 
@@ -367,15 +377,22 @@ export default function VendorsPage() {
               <span className="text-sm font-semibold text-gray-600">Browse:</span>
               <button
                 type="button"
-                disabled={!effectiveLocation?.lat || !effectiveLocation?.lng}
-                onClick={() => setListMode('nearby')}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ring-1 transition disabled:opacity-40 ${
+                onClick={() => {
+                  if (!effectiveLocation?.lat) {
+                    useBrowserLocation(true)
+                  } else {
+                    setListMode('nearby')
+                  }
+                }}
+                disabled={locBusy}
+                className={`relative rounded-full px-4 py-2 text-sm font-semibold ring-1 transition disabled:opacity-60 flex items-center gap-2 ${
                   listMode === 'nearby'
                     ? 'bg-blue-600 text-white ring-blue-600'
                     : 'bg-white text-gray-800 ring-gray-200 hover:bg-gray-50'
                 }`}
               >
-                Nearby
+                <FiNavigation size={14} />
+                {locBusy && !effectiveLocation ? 'Detecting…' : 'Nearby'}
               </button>
               <button
                 type="button"

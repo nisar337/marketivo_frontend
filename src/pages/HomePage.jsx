@@ -123,17 +123,19 @@ export default function HomePage() {
           d="M31.5 41.5c4.1 0 5.8-2.2 0-2.2-3.2 0-3.1 2.2 0 2.2Z"
           fill="#16a34a"
         />
-        <path
-          d="M17 14h4l1.5 12.5h11L35 14H21"
-          stroke="#16a34a"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path d="M22 17.5h11.2" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
-        <path d="M22.6 21h10" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
-        <circle cx="23.5" cy="31" r="1.7" fill="#16a34a" />
-        <circle cx="30.8" cy="31" r="1.7" fill="#16a34a" />
+        <g transform="translate(-2 0)">
+          <path
+            d="M17 14h4l1.5 12.5h11L35 14H21"
+            stroke="#16a34a"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M22 17.5h11.2" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M22.6 21h10" stroke="#16a34a" strokeWidth="2.6" strokeLinecap="round" />
+          <circle cx="23.5" cy="31" r="1.7" fill="#16a34a" />
+          <circle cx="30.8" cy="31" r="1.7" fill="#16a34a" />
+        </g>
       </svg>
       <div className="leading-tight">
         <p className={`font-bold ${titleSizeClass}`}>
@@ -739,8 +741,8 @@ export default function HomePage() {
       <footer className="bg-gray-900 text-white py-6 mt-4">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-5   mb-3">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Brand size={28} titleSizeClass="text-sm " taglineSizeClass="text-xs" showTagline={false} />
+            <div className="flex  items-center gap-2 mb-2">
+              <Brand size={28} titleSizeClass="  text-sm " taglineSizeClass="text-xs" showTagline={false} />
             </div>
             <p className="text-xs text-gray-400 mb-2">Best choice for local vendors</p>
             <div className="flex gap-2">
