@@ -172,7 +172,7 @@ export default function HomePage() {
   )
 
   const activeHeaderCategory = categories.find((c) => c._id === selectedCategory)
-  const Brand = ({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass = 'text-xs', showTagline = true }) => (
+  const Brand = ({ size = 40, titleSizeClass = 'text-2xl', taglineSizeClass = 'text-xs', showTagline = true, dark = false }) => (
     <div className="flex items-center gap-2">
       <svg
         width={size}
@@ -214,7 +214,7 @@ export default function HomePage() {
       </svg>
       <div className="leading-tight">
         <p className={`font-bold ${titleSizeClass}`}>
-          <span className="text-gray-900">Market</span>
+          <span className={dark ? 'text-white' : 'text-gray-900'}>Market</span>
           <span className="text-green-600">ivo</span>
         </p>
         {showTagline && <p className={`${taglineSizeClass} text-gray-500`}>Best choice for local vendors</p>}
@@ -819,7 +819,7 @@ export default function HomePage() {
             </svg>
 
             {/* Phone */}
-            <div className="absolute right-10 top-2 w-[260px] h-[440px] rounded-[2.5rem] bg-gray-900 p-2 shadow-2xl ring-1 ring-black/10">
+            <div className="absolute left-[30%] top-2 w-[260px] h-[440px] rounded-[2.5rem] bg-gray-900 p-2 shadow-2xl ring-1 ring-black/10">
               <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-white">
                 {/* Notch */}
                 <div className="absolute left-1/2 top-2 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-gray-900" />
@@ -939,7 +939,7 @@ export default function HomePage() {
             </div>
 
             {/* Floating Card: Fast Delivery */}
-            <div className="absolute left-0 top-16 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+            <div className="absolute left-10 top-16 flex items-center gap-2 rounded-lg bg-white px-1 py-2 shadow-lg ring-1 ring-black/5">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
                 <FiTruck size={16} />
               </div>
@@ -950,7 +950,7 @@ export default function HomePage() {
             </div>
 
             {/* Floating Card: Secure Payment */}
-            <div className="absolute left-4 bottom-24 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+            <div className="absolute left-4 bottom-24 flex items-center gap-2 rounded-lg bg-white px-1 py-2 shadow-lg ring-1 ring-black/5">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
                 <FiLock size={16} />
               </div>
@@ -961,7 +961,7 @@ export default function HomePage() {
             </div>
 
             {/* Floating Card: 24/7 Support */}
-            <div className="absolute right-0 top-24 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
+            <div className="absolute right-20 bottom-[30%] flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-lg ring-1 ring-black/5">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 text-blue-600">
                 <FiHeadphones size={16} />
               </div>
@@ -1138,7 +1138,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 mb-6">
           <div className="col-span-2 sm:col-span-3 md:col-span-1">
             <div className="flex items-center gap-2 mb-2">
-              <Brand size={28} titleSizeClass="text-sm" taglineSizeClass="text-xs" showTagline={false} />
+              <Brand size={28} titleSizeClass="text-sm" taglineSizeClass="text-xs" showTagline={false} dark />
             </div>
             <p className="text-xs text-gray-400 mb-2">Best choice for local vendors</p>
             <div className="flex gap-2">
