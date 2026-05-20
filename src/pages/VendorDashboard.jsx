@@ -46,6 +46,10 @@ export default function VendorDashboard() {
   const [productToDelete, setProductToDelete] = useState(null)
   const [editingProduct, setEditingProduct] = useState(null)
   const [categories, setCategories] = useState([])
+  const [vendorReviews, setVendorReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [reviewsError, setReviewsError] = useState('')
+  const [reviewToDelete, setReviewToDelete] = useState(null)
   const [newProduct, setNewProduct] = useState({
     name: '', price: '', discountPrice: '', stockQuantity: '', inStock: 'true', brand: '', category: '', description: '', images: []
   })
@@ -63,6 +67,10 @@ export default function VendorDashboard() {
   const profileMenuRef = useRef(null)
   const showProfileMenu = profileMenuOpen || profileMenuHover
   const [showSidebar, setShowSidebar] = useState(false)
+  const [reportRange, setReportRange] = useState('30d')
+  const [reportStatus, setReportStatus] = useState('all')
+  const [reportStartDate, setReportStartDate] = useState('')
+  const [reportEndDate, setReportEndDate] = useState('')
 
   // Helper to navigate + auto-close mobile sidebar
   const goToView = (view) => {
@@ -112,9 +120,29 @@ export default function VendorDashboard() {
     }
   }, [token])
 
+  const fetchReviews = useCallback(async () => {
+    if (!token) return
+    setReviewsLoading(true)
+    setReviewsError('')
+    try {
+      const { data } = await axios.get(`${API}/api/reviews/vendor`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setVendorReviews(data.reviews || [])
+    } catch (err) {
+      setReviewsError(err.response?.data?.message || 'Failed to load reviews.')
+    } finally {
+      setReviewsLoading(false)
+    }
+  }, [token])
+
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   useEffect(() => {
     axios.get(`${API}/api/categories`).then(({ data }) => setCategories(data.categories || [])).catch(() => {})
@@ -137,6 +165,98 @@ export default function VendorDashboard() {
   const totalOrders = vendorOrders.length
   const totalProducts = products.length
   const totalCustomers = new Set(vendorOrders.map(o => o.customer?._id)).size
+
+  const DAY_MS = 24 * 60 * 60 * 1000
+  const reportRangeStart = (() => {
+    if (reportRange === 'custom') {
+      return reportStartDate ? new Date(`${reportStartDate}T00:00:00`) : null
+    }
+    if (reportRange === 'all') return null
+    const days = reportRange === '7d' ? 7 : reportRange === '90d' ? 90 : 30
+    const start = new Date()
+    start.setDate(start.getDate() - (days - 1))
+    start.setHours(0, 0, 0, 0)
+    return start
+  })()
+  const reportRangeEnd = (() => {
+    if (reportRange === 'custom') {
+      return reportEndDate ? new Date(`${reportEndDate}T23:59:59`) : null
+    }
+    return new Date()
+  })()
+
+  const reportOrders = vendorOrders.filter((order) => {
+    const status = order.status || 'Pending'
+    if (reportStatus !== 'all' && status !== reportStatus) return false
+    if (!reportRangeStart && !reportRangeEnd) return true
+    if (!order.createdAt) return false
+    const orderDate = new Date(order.createdAt)
+    if (reportRangeStart && orderDate < reportRangeStart) return false
+    if (reportRangeEnd && orderDate > reportRangeEnd) return false
+    return true
+  })
+
+  const reportSales = reportOrders.reduce((sum, order) => sum + (order.itemTotal || 0), 0)
+  const reportOrderCount = reportOrders.length
+  const reportItemCount = reportOrders.reduce((sum, order) => sum + (order.items?.length || 0), 0)
+  const reportAverageOrder = reportOrderCount ? reportSales / reportOrderCount : 0
+  const reportCustomers = new Set(reportOrders.map(o => o.customer?._id).filter(Boolean)).size
+
+  const topReportProducts = Object.values(
+    reportOrders.reduce((acc, order) => {
+      order.items?.forEach((item) => {
+        const name = item.product?.name || 'Unnamed Product'
+        if (!acc[name]) {
+          acc[name] = { name, quantity: 0, revenue: 0 }
+        }
+        acc[name].quantity += item.quantity || 1
+        acc[name].revenue += (item.totalPrice || item.price || 0) * (item.quantity || 1)
+      })
+      return acc
+    }, {})
+  )
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5)
+
+  const reportChartSeries = (() => {
+    const end = reportRangeEnd || new Date()
+    const start = reportRangeStart || new Date(end.getTime() - 6 * DAY_MS)
+    const totalDays = Math.max(1, Math.floor((end - start) / DAY_MS) + 1)
+    const bucketCount = Math.min(14, totalDays)
+    const bucketSize = Math.ceil(totalDays / bucketCount)
+    const buckets = Array.from({ length: bucketCount }, (_, idx) => {
+      const bucketStart = new Date(start.getTime() + idx * bucketSize * DAY_MS)
+      const bucketEnd = new Date(Math.min(end.getTime(), bucketStart.getTime() + (bucketSize * DAY_MS) - 1))
+      return { start: bucketStart, end: bucketEnd, value: 0 }
+    })
+
+    reportOrders.forEach((order) => {
+      if (!order.createdAt) return
+      const orderDate = new Date(order.createdAt)
+      if (orderDate < start || orderDate > end) return
+      const offset = Math.floor((orderDate - start) / DAY_MS)
+      const bucketIndex = Math.min(bucketCount - 1, Math.floor(offset / bucketSize))
+      buckets[bucketIndex].value += order.itemTotal || 0
+    })
+
+    return buckets.map((bucket) => {
+      const label = bucketSize === 1
+        ? bucket.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : `${bucket.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}-${bucket.end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+      return { label, value: bucket.value }
+    })
+  })()
+  const reportChartMax = Math.max(1, ...reportChartSeries.map((point) => point.value))
+
+  const reportRangeLabel = reportRange === 'custom'
+    ? (reportStartDate && reportEndDate ? `${reportStartDate} → ${reportEndDate}` : 'Custom range')
+    : reportRange === '7d'
+      ? 'Last 7 days'
+      : reportRange === '90d'
+        ? 'Last 90 days'
+        : reportRange === 'all'
+          ? 'All time'
+          : 'Last 30 days'
 
   const getOrderStatusColor = (status) => {
     if (status === 'Processing') return 'bg-blue-100 text-blue-700'
@@ -198,6 +318,20 @@ export default function VendorDashboard() {
     } catch (err) {
       console.error('Failed to delete product:', err)
       alert('Failed to delete product')
+    }
+  }
+
+  const handleDeleteReview = async () => {
+    if (!reviewToDelete) return
+    try {
+      await axios.delete(`${API}/api/reviews/${reviewToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setVendorReviews((prev) => prev.filter((review) => review._id !== reviewToDelete._id))
+      setReviewToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete review:', err)
+      alert(err.response?.data?.message || 'Failed to delete review')
     }
   }
 
@@ -294,8 +428,11 @@ export default function VendorDashboard() {
       formData.append('price', String(Number(editingProduct.price) || 0))
       formData.append('discountPrice', editingProduct.discountPrice ? String(Number(editingProduct.discountPrice)) : '')
       formData.append('stockQuantity', String(Number(editingProduct.stockQuantity) || 0))
-      if (editingProduct.category) {
-        formData.append('category', editingProduct.category)
+      const categoryId = typeof editingProduct.category === 'object'
+        ? editingProduct.category?._id
+        : editingProduct.category
+      if (categoryId) {
+        formData.append('category', categoryId)
       }
 
       const res = await axios.put(`${API}/api/products/${editingProduct._id}`, formData, {
@@ -365,26 +502,8 @@ export default function VendorDashboard() {
             >
               <FiShoppingCart size={18} /> Orders
             </button>
-            <button
-              onClick={() => goToView('customers')}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
-                activeView === 'customers'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <FiUsers size={18} /> Customers
-            </button>
-            <button
-              onClick={() => goToView('messages')}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
-                activeView === 'messages'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <FiMessageSquare size={18} /> Messages
-            </button>
+           
+        
             <button
               onClick={() => goToView('reviews')}
               className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
@@ -989,16 +1108,243 @@ export default function VendorDashboard() {
           )}
 
           {activeView === 'reviews' && (
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Reviews</h2>
-              <p className="text-sm text-gray-600 text-center py-6">Reviews coming soon</p>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Reviews</h2>
+                    <p className="text-xs text-gray-500">See what customers say about your products.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchReviews}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                {reviewsLoading ? (
+                  <div className="py-6 flex justify-center">
+                    <ModernLoader />
+                  </div>
+                ) : reviewsError ? (
+                  <div className="py-6 text-center text-sm text-red-600">{reviewsError}</div>
+                ) : vendorReviews.length ? (
+                  <div className="space-y-4">
+                    {vendorReviews.map((review) => (
+                      <div key={review._id} className="border border-gray-200 rounded-xl p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            {review.product?.images?.[0]?.url ? (
+                              <img
+                                src={review.product.images[0].url}
+                                alt={review.product?.name}
+                                className="h-12 w-12 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="h-12 w-12 rounded-lg bg-gray-100 text-xs text-gray-400 flex items-center justify-center">
+                                No image
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-gray-900">{review.product?.name || 'Product'}</p>
+                              <p className="text-xs text-gray-500">by {review.user?.name || 'Customer'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1 text-yellow-400">
+                              {[...Array(5)].map((_, index) => (
+                                <FiStar
+                                  key={index}
+                                  size={14}
+                                  className={index < (review.rating || 0) ? 'fill-current' : ''}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setReviewToDelete(review)}
+                              className="text-xs text-red-600 font-semibold hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-700">{review.comment || 'No comment provided.'}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-sm text-gray-500">No reviews yet.</div>
+                )}
+              </div>
             </div>
           )}
 
           {activeView === 'reports' && (
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">Reports</h2>
-              <p className="text-sm text-gray-600 text-center py-6">Reports coming soon</p>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Reports</h2>
+                    <p className="text-xs text-gray-500">Range: {reportRangeLabel}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <select
+                      value={reportRange}
+                      onChange={(e) => setReportRange(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="7d">Last 7 days</option>
+                      <option value="30d">Last 30 days</option>
+                      <option value="90d">Last 90 days</option>
+                      <option value="all">All time</option>
+                      <option value="custom">Custom range</option>
+                    </select>
+                    <select
+                      value={reportStatus}
+                      onChange={(e) => setReportStatus(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                    </select>
+                    {reportRange === 'custom' && (
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          type="date"
+                          value={reportStartDate}
+                          onChange={(e) => setReportStartDate(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <input
+                          type="date"
+                          value={reportEndDate}
+                          onChange={(e) => setReportEndDate(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-500">Total Sales</p>
+                  <p className="text-xl font-bold text-gray-900">Rs. {reportSales.toFixed(2)}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-500">Orders</p>
+                  <p className="text-xl font-bold text-gray-900">{reportOrderCount}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-500">Items Sold</p>
+                  <p className="text-xl font-bold text-gray-900">{reportItemCount}</p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-500">Avg. Order Value</p>
+                  <p className="text-xl font-bold text-gray-900">Rs. {reportAverageOrder.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="bg-white p-4 rounded-lg border border-gray-200 lg:col-span-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900">Sales Trend</h3>
+                    <span className="text-xs text-gray-500">{reportOrders.length} orders</span>
+                  </div>
+                  <div className="flex items-end gap-2 h-40">
+                    {reportChartSeries.map((point) => (
+                      <div key={point.label} className="flex-1 flex flex-col items-center gap-2">
+                        <div
+                          className="w-full bg-blue-100 rounded-md flex items-end"
+                          style={{ height: '100%' }}
+                        >
+                          <div
+                            className="w-full bg-blue-600 rounded-md"
+                            style={{ height: `${(point.value / reportChartMax) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-gray-500 text-center leading-tight">{point.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900">Top Products</h3>
+                    <span className="text-xs text-gray-500">{reportCustomers} customers</span>
+                  </div>
+                  {topReportProducts.length ? (
+                    <div className="space-y-3">
+                      {topReportProducts.map((product) => (
+                        <div key={product.name} className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{product.name}</p>
+                            <p className="text-xs text-gray-500">{product.quantity} sold</p>
+                          </div>
+                          <p className="text-sm font-semibold text-blue-600">Rs. {product.revenue.toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No products in this range.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Orders in Report</h3>
+                  <span className="text-xs text-gray-500">{reportOrderCount} orders • Rs. {reportSales.toFixed(2)}</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase text-gray-500 border-b border-gray-200">
+                        <th className="py-2 pr-4">Order</th>
+                        <th className="py-2 pr-4">Customer</th>
+                        <th className="py-2 pr-4">Status</th>
+                        <th className="py-2 pr-4">Items</th>
+                        <th className="py-2 pr-4">Total</th>
+                        <th className="py-2">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportOrders.length ? (
+                        reportOrders.map((order) => (
+                          <tr key={order._id} className="border-b border-gray-100 last:border-b-0">
+                            <td className="py-3 pr-4 font-semibold text-gray-900">#{order._id.slice(-6).toUpperCase()}</td>
+                            <td className="py-3 pr-4 text-gray-700">{order.customer?.name || 'Customer'}</td>
+                            <td className="py-3 pr-4">
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getOrderStatusColor(order.status || 'Pending')}`}>
+                                {order.status || 'Pending'}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4 text-gray-700">{order.items?.length || 0}</td>
+                            <td className="py-3 pr-4 font-semibold text-gray-900">Rs. {(order.itemTotal || 0).toFixed(2)}</td>
+                            <td className="py-3 text-gray-600">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="py-6 text-center text-sm text-gray-500">No orders found for this range.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1180,6 +1526,14 @@ export default function VendorDashboard() {
         message={`Are you sure you want to delete "${productToDelete?.name}"? This action cannot be undone.`}
         onConfirm={handleDeleteProduct}
         onCancel={() => setProductToDelete(null)}
+      />
+
+      <DeleteConfirmation
+        isOpen={!!reviewToDelete}
+        title="Delete Review"
+        message={`Delete this review from ${reviewToDelete?.user?.name || 'customer'}? This action cannot be undone.`}
+        onConfirm={handleDeleteReview}
+        onCancel={() => setReviewToDelete(null)}
       />
 
       {editingProduct && (

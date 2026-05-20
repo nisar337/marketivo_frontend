@@ -55,6 +55,13 @@ export default function ProductPage() {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [shareMessage, setShareMessage] = useState('')
   const [actionMessage, setActionMessage] = useState('')
+  const [reviews, setReviews] = useState([])
+  const [reviewCount, setReviewCount] = useState(0)
+  const [averageRating, setAverageRating] = useState(0)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewMessage, setReviewMessage] = useState('')
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -76,6 +83,25 @@ export default function ProductPage() {
 
     fetchProduct()
   }, [id, token])
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const { data } = await axios.get(`${API}/api/reviews/product/${id}`)
+        setReviews(data.reviews || [])
+        setReviewCount(data.reviewCount || 0)
+        setAverageRating(data.averageRating || 0)
+      } catch {
+        setReviews([])
+        setReviewCount(0)
+        setAverageRating(0)
+      }
+    }
+
+    if (id) {
+      fetchReviews()
+    }
+  }, [id])
 
   useEffect(() => {
     const fetchRelatedProducts = async () => {
@@ -106,6 +132,12 @@ export default function ProductPage() {
     return () => clearTimeout(timer)
   }, [shareMessage, actionMessage])
 
+  useEffect(() => {
+    if (!reviewMessage) return undefined
+    const timer = setTimeout(() => setReviewMessage(''), 2400)
+    return () => clearTimeout(timer)
+  }, [reviewMessage])
+
   const imageList = useMemo(() => {
     if (!product?.images?.length) return []
     return product.images.map((image) => getImageUrl(image)).filter(Boolean)
@@ -123,7 +155,6 @@ export default function ProductPage() {
   const isOutOfStock = availableStock < 1
   const canPurchase = user?.role !== 'vendor' && user?.role !== 'admin' && !isOutOfStock
   const vendorId = product?.vendorId?._id
-  const reviewCount = 120
   const soldCount = Math.max(350, availableStock + 300)
 
   const setSafeQuantity = (next) => {
@@ -168,6 +199,43 @@ export default function ProductPage() {
       setShareMessage('Product link copied.')
     } catch {
       setShareMessage('Unable to copy link.')
+    }
+  }
+
+  const handleSubmitReview = async () => {
+    if (!user || !token) {
+      setReviewMessage('Please log in to submit a review.')
+      return
+    }
+    if (user.role !== 'customer') {
+      setReviewMessage('Only customers can submit reviews.')
+      return
+    }
+    if (!reviewComment.trim()) {
+      setReviewMessage('Please write a short review.')
+      return
+    }
+
+    setReviewSubmitting(true)
+    try {
+      const { data } = await axios.post(
+        `${API}/api/reviews`,
+        { productId: id, rating: reviewRating, comment: reviewComment.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setReviews((prev) => [data.review, ...prev])
+      setReviewCount((prev) => prev + 1)
+      setAverageRating((prev) => {
+        const total = prev * reviewCount + data.review.rating
+        return total / (reviewCount + 1)
+      })
+      setReviewComment('')
+      setReviewRating(5)
+      setReviewMessage('Review submitted successfully.')
+    } catch (err) {
+      setReviewMessage(err.response?.data?.message || 'Failed to submit review.')
+    } finally {
+      setReviewSubmitting(false)
     }
   }
 
@@ -312,10 +380,14 @@ export default function ProductPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-600">
                   <div className="flex items-center gap-1 text-yellow-400">
                     {[...Array(5)].map((_, index) => (
-                      <FiStar key={index} size={16} className="fill-current" />
+                      <FiStar
+                        key={index}
+                        size={16}
+                        className={index < Math.round(averageRating) ? 'fill-current' : ''}
+                      />
                     ))}
                   </div>
-                  <span className="font-medium text-gray-800">4.5</span>
+                  <span className="font-medium text-gray-800">{averageRating.toFixed(1)}</span>
                   <span>({reviewCount} Reviews)</span>
                   <span className="text-gray-300">|</span>
                   <span>Sold {soldCount}+</span>
@@ -447,6 +519,100 @@ export default function ProductPage() {
                   <FiArrowLeft size={16} />
                   Back to all products
                 </Link>
+              </div>
+            </div>
+
+            <div className="mt-16 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
+                    <p className="text-sm text-gray-500">
+                      {reviewCount} reviews • {averageRating.toFixed(1)} average rating
+                    </p>
+                  </div>
+                </div>
+
+                {reviews.length ? (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review._id} className="rounded-2xl border border-gray-200 bg-white p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {review.user?.name || 'Customer'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 text-yellow-400">
+                            {[...Array(5)].map((_, index) => (
+                              <FiStar
+                                key={index}
+                                size={14}
+                                className={index < (review.rating || 0) ? 'fill-current' : ''}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-700">{review.comment || 'No comment provided.'}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+                    No reviews yet. Be the first to share your feedback.
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900">Write a Review</h3>
+                <p className="mt-1 text-sm text-gray-500">Share your experience with this product.</p>
+
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-gray-900">Your Rating</p>
+                  <div className="mt-2 flex items-center gap-2 text-yellow-400">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setReviewRating(value)}
+                        className="focus:outline-none"
+                        aria-label={`Rate ${value} star${value > 1 ? 's' : ''}`}
+                      >
+                        <FiStar size={20} className={value <= reviewRating ? 'fill-current' : ''} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-sm font-semibold text-gray-900">Your Review</label>
+                  <textarea
+                    rows="4"
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="What did you like about this product?"
+                    className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                {reviewMessage && (
+                  <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+                    {reviewMessage}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting}
+                  className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400"
+                >
+                  {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
               </div>
             </div>
 
