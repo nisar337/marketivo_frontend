@@ -42,6 +42,7 @@ export default function VendorsPage() {
 
   const [listMode, setListMode] = useState('all')
   const [radiusKm, setRadiusKm] = useState(25)
+  const [customRadius, setCustomRadius] = useState('')
   const [gpsError, setGpsError] = useState('')
 
   const [locQuery, setLocQuery] = useState('')
@@ -413,7 +414,11 @@ export default function VendorsPage() {
                     <span className="font-medium whitespace-nowrap">Within</span>
                     <select
                       value={radiusKm}
-                      onChange={(e) => setRadiusKm(Number(e.target.value))}
+                      onChange={(e) => {
+                        const value = Number(e.target.value)
+                        setRadiusKm(value)
+                        setCustomRadius('')
+                      }}
                       className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 bg-white shadow-sm"
                     >
                       <option value={10}>10 km</option>
@@ -422,6 +427,25 @@ export default function VendorsPage() {
                       <option value={100}>100 km</option>
                       <option value={200}>200 km</option>
                     </select>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-medium whitespace-nowrap">Custom</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={200}
+                      value={customRadius}
+                      onChange={(e) => {
+                        const raw = e.target.value
+                        setCustomRadius(raw)
+                        const num = Number(raw)
+                        if (Number.isFinite(num) && num >= 1) {
+                          setRadiusKm(Math.min(200, num))
+                        }
+                      }}
+                      className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 bg-white shadow-sm"
+                      placeholder="km"
+                    />
                   </label>
                 </>
               )}

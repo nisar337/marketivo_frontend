@@ -4,13 +4,14 @@ import { FiEye, FiEyeOff, FiShoppingBag, FiMapPin, FiCheckCircle } from 'react-i
 import { useAuth } from '../context/AuthContext'
 import MarketingLayout from '../components/MarketingLayout'
 import { resolveAfterLogin } from '../utils/postLogin'
+import Toast from '../components/Toast'
 
 const inputClass =
   'mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30'
 const labelClass = 'block text-sm font-medium text-gray-700'
 
 export default function RegisterPage() {
-  const { register } = useAuth()
+  const { registerRequest, verifyRegistration, resendRegisterOtp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [form, setForm] = useState({
@@ -28,6 +29,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [gpsLoading, setGpsLoading] = useState(false)
   const [gpsError, setGpsError] = useState('')
+  const [step, setStep] = useState('form')
+  const [otp, setOtp] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [toast, setToast] = useState({ message: '', type: 'success' })
 
   const captureGps = () => {
     setGpsError('')
@@ -74,35 +79,94 @@ export default function RegisterPage() {
     }
     setSubmitting(true)
     try {
-      const data = await register(form)
-      navigate(resolveAfterLogin(data.user, null), { replace: true })
+      await registerRequest(form)
+      setStep('otp')
+      setResendCooldown(60)
+      setToast({ message: 'OTP sent to your email.', type: 'success' })
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.')
+      const message = err.response?.data?.message || 'Registration failed.'
+      setError(message)
+      setToast({ message, type: 'error' })
     } finally {
       setSubmitting(false)
     }
   }
 
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setError('')
+    if (!otp.trim()) {
+      setError('OTP is required.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const data = await verifyRegistration({ email: form.email, otp: otp.trim() })
+      setToast({ message: 'Registration verified. Welcome!', type: 'success' })
+      navigate(resolveAfterLogin(data.user, null), { replace: true })
+    } catch (err) {
+      const message = err.response?.data?.message || 'OTP verification failed.'
+      setError(message)
+      setToast({ message, type: 'error' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return
+    setSubmitting(true)
+    setError('')
+    try {
+      await resendRegisterOtp(form.email)
+      setResendCooldown(60)
+      setToast({ message: 'OTP resent successfully.', type: 'success' })
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to resend OTP.'
+      setError(message)
+      setToast({ message, type: 'error' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
+
   return (
     <MarketingLayout activeNav="none">
       <div className="bg-gradient-to-b from-sky-50 via-white to-gray-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-10 md:py-14">
-          <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-blue-100/50 md:p-10">
-            <div className="mb-2 inline-flex items-center justify-center rounded-xl bg-green-100 p-3 text-green-700">
-              <FiShoppingBag size={28} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+          <div
+            className={`mx-auto ${step === 'otp' ? 'max-w-md' : 'max-w-lg'} rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-blue-100/50 md:p-10`}
+          >
+            {step === 'form' && (
+              <div className="mb-2 inline-flex items-center justify-center rounded-xl bg-green-100 p-3 text-green-700">
+                <FiShoppingBag size={28} />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold text-gray-900">
+              {step === 'otp' ? 'Verify OTP' : 'Create your account'}
+            </h1>
             <p className="mt-2 text-sm text-gray-600">
-              {form.role === 'vendor'
-                ? 'Set up your vendor profile and start selling to local customers.'
-                : 'Join Marketivo to shop from vendors near you.'}
+              {step === 'otp'
+                ? 'Enter the 6-digit code sent to your email to finish registration.'
+                : form.role === 'vendor'
+                  ? 'Set up your vendor profile and start selling to local customers.'
+                  : 'Join Marketivo to shop from vendors near you.'}
             </p>
 
             {error && (
               <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {step === 'form' ? (
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="name" className={labelClass}>
                   Full name
@@ -251,21 +315,58 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-200 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Creating account…
-                  </>
-                ) : (
-                  'Create account'
-                )}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-200 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Sending OTP…
+                    </>
+                  ) : (
+                    'Send OTP'
+                  )}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="mt-6 space-y-4">
+                <div>
+                  <label className={labelClass}>Enter OTP</label>
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className={inputClass}
+                    placeholder="6-digit code"
+                    maxLength={6}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-200 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? 'Verifying…' : 'Verify & Create Account'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={submitting || resendCooldown > 0}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend OTP'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep('form')}
+                  className="w-full text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  Edit registration details
+                </button>
+              </form>
+            )}
 
             <p className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{' '}
@@ -281,6 +382,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: toast.type })} />
     </MarketingLayout>
   )
 }

@@ -54,6 +54,40 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const registerRequest = async (formData) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/register-request`, formData)
+    return data
+  }
+
+  const verifyRegistration = async ({ email, otp }) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/verify-registration`, { email, otp })
+    localStorage.setItem('token', data.token)
+    setToken(data.token)
+    setUser(data.user)
+    syncStoredFromServerUser(data.user)
+    return data
+  }
+
+  const resendRegisterOtp = async (email) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/resend-register-otp`, { email })
+    return data
+  }
+
+  const forgotPassword = async (email) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email })
+    return data
+  }
+
+  const verifyOtp = async (email, otp) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, { email, otp })
+    return data
+  }
+
+  const resetPassword = async (resetToken, newPassword) => {
+    const { data } = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, { resetToken, newPassword })
+    return data
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     setToken(null)
@@ -91,7 +125,23 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, refreshProfile, mergeUserFromServer, setAuth }}
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        registerRequest,
+        verifyRegistration,
+        resendRegisterOtp,
+        forgotPassword,
+        verifyOtp,
+        resetPassword,
+        logout,
+        refreshProfile,
+        mergeUserFromServer,
+        setAuth,
+      }}
     >
       {children}
     </AuthContext.Provider>

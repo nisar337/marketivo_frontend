@@ -86,7 +86,7 @@ function getHomeCategoryStyle(name, index) {
 }
 
 export default function HomePage() {
-  const { user, logout, login } = useAuth()
+  const { user, logout, login, registerRequest, verifyRegistration, resendRegisterOtp } = useAuth()
   const { addToCart, cartCount } = useCart()
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
@@ -104,6 +104,9 @@ export default function HomePage() {
   const [formData, setFormData] = useState({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
   const [gpsLoading, setGpsLoading] = useState(false)
   const [gpsError, setGpsError] = useState('')
+  const [authStep, setAuthStep] = useState('form')
+  const [otp, setOtp] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   const captureGps = () => {
     setGpsError('')
@@ -227,6 +230,8 @@ export default function HomePage() {
     setTimeout(() => {
       setShowAuthModal(false)
       setIsClosing(false)
+      setAuthStep('form')
+      setOtp('')
     }, 300)
   }
 
@@ -235,6 +240,13 @@ export default function HomePage() {
       setAlert(location.state.message)
       navigate(location.pathname, { replace: true, state: {} })
     }
+  }, [location, navigate])
+
+  useEffect(() => {
+    if (!location.state?.authModal) return
+    setAuthMode(location.state.authModal)
+    setShowAuthModal(true)
+    navigate(location.pathname, { replace: true, state: {} })
   }, [location, navigate])
 
   useEffect(() => {
@@ -297,22 +309,29 @@ export default function HomePage() {
         const data = await login(formData.email, formData.password)
         handleCloseModal()
         setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
+        setAuthStep('form')
         navigate(resolveAfterLogin(data.user, location.state?.from), { replace: true })
       } else {
-        const response = await axios.post(`${API}/api/auth/register`, {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          storeName: formData.storeName,
-          description: formData.description,
-          lat: formData.lat,
-          lng: formData.lng,
-        })
-        if (response.data.token) {
-          const data = await login(formData.email, formData.password)
+        if (authStep === 'form') {
+          await registerRequest({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            role: formData.role,
+            storeName: formData.storeName,
+            description: formData.description,
+            lat: formData.lat,
+            lng: formData.lng,
+          })
+          setAuthStep('otp')
+          setResendCooldown(60)
+          setAlert('OTP sent to your email.')
+        } else {
+          const data = await verifyRegistration({ email: formData.email, otp: otp.trim() })
           handleCloseModal()
           setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
+          setAuthStep('form')
+          setOtp('')
           navigate(resolveAfterLogin(data.user, null), { replace: true })
         }
       }
@@ -322,6 +341,28 @@ export default function HomePage() {
       setSubmitting(false)
     }
   }
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return
+    setSubmitting(true)
+    try {
+      await resendRegisterOtp(formData.email)
+      setResendCooldown(60)
+      setAlert('OTP resent successfully.')
+    } catch (error) {
+      setAlert(error.response?.data?.message || 'Failed to resend OTP')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   return (
     <div className="w-full bg-white overflow-x-hidden scrollbar-hide" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
@@ -1229,7 +1270,7 @@ export default function HomePage() {
 
               {/* Form */}
               <form onSubmit={handleAuthSubmit} className="space-y-3 flex-1 flex flex-col">
-                {authMode === 'register' && (
+                {authMode === 'register' && authStep === 'form' && (
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
                     <input
@@ -1255,28 +1296,30 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-3 py-1.5 pr-10 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                    >
-                      {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
+                {authStep === 'form' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full px-3 py-1.5 pr-10 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                      >
+                        {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {authMode === 'register' && (
+                {authMode === 'register' && authStep === 'form' && (
                   <>
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Account Type</label>
@@ -1290,7 +1333,7 @@ export default function HomePage() {
                       </select>
                     </div>
 
-                    {formData.role === 'vendor' && (
+                    {authMode === 'register' && authStep === 'form' && formData.role === 'vendor' && (
                       <>
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Store Name <span className="text-red-500">*</span></label>
@@ -1349,6 +1392,34 @@ export default function HomePage() {
                   </>
                 )}
 
+                {authMode === 'register' && authStep === 'otp' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">OTP</label>
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="6-digit code"
+                      maxLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={submitting || resendCooldown > 0}
+                      className="mt-2 w-full border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-semibold hover:bg-gray-50 disabled:opacity-60"
+                    >
+                      {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend OTP'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthStep('form')}
+                      className="mt-2 w-full text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Edit details
+                    </button>
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={submitting}
@@ -1357,12 +1428,32 @@ export default function HomePage() {
                   {submitting ? (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {authMode === 'login' ? 'Signing in...' : 'Creating account...'}
+                      {authMode === 'login'
+                        ? 'Signing in...'
+                        : authStep === 'form'
+                          ? 'Sending OTP...'
+                          : 'Verifying OTP...'}
                     </>
                   ) : (
-                    authMode === 'login' ? 'Sign In' : 'Create Account'
+                    authMode === 'login'
+                      ? 'Sign In'
+                      : authStep === 'form'
+                        ? 'Send OTP'
+                        : 'Verify OTP'
                   )}
                 </button>
+                {authMode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCloseModal()
+                      navigate('/forgot-password')
+                    }}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    Forgot password?
+                  </button>
+                )}
 
                 {/* Toggle Mode */}
                 <div className="text-center pt-2 border-t border-gray-200 mt-auto">
@@ -1373,6 +1464,8 @@ export default function HomePage() {
                       onClick={() => {
                         setAuthMode(authMode === 'login' ? 'register' : 'login')
                         setFormData({ email: '', password: '', name: '', role: 'customer', storeName: '', description: '', lat: null, lng: null })
+                        setAuthStep('form')
+                        setOtp('')
                       }}
                       className="text-blue-600 font-semibold hover:text-blue-700"
                     >

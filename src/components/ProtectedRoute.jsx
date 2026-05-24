@@ -21,7 +21,7 @@ function AuthGate({ children, roles, guest }) {
     if (!user) return children
 
     const isVendorLogin = location.pathname === '/login/vendor'
-    const isAdminLogin = location.pathname === '/login/admin'
+    const isAdminLogin = location.pathname === '/admin/login'
 
     if (isVendorLogin && user.role === 'vendor') {
       return <Navigate to="/vendor/dashboard" replace />

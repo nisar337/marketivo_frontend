@@ -155,7 +155,7 @@ export default function ProductPage() {
   const isOutOfStock = availableStock < 1
   const canPurchase = user?.role !== 'vendor' && user?.role !== 'admin' && !isOutOfStock
   const vendorId = product?.vendorId?._id
-  const soldCount = Math.max(350, availableStock + 300)
+  const soldCount = Math.max(10, Number(product?.soldCount || 0))
 
   const setSafeQuantity = (next) => {
     const maxAllowed = Math.max(remainingStock, 1)
@@ -250,7 +250,7 @@ export default function ProductPage() {
 
   return (
     <MarketingLayout activeNav="none">
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+      <div className="max-w-5xl mx-auto md:py-10">
         <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-gray-500">
           <Link to="/" className="hover:text-blue-600 transition-colors">Home</Link>
           <FiChevronRight size={14} className="text-gray-400" />

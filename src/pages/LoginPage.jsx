@@ -181,14 +181,19 @@ export default function LoginPage({ role: roleProp }) {
               </button>
             </form>
 
-            {!effectiveRole && (
-              <p className="mt-6 text-center text-sm text-gray-600">
-                Don&apos;t have an account?{' '}
-                <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700">
-                  Create one
-                </Link>
-              </p>
-            )}
+            <div className="mt-6 space-y-3 text-center text-sm text-gray-600">
+              <Link to="/forgot-password" className="font-semibold text-blue-600 hover:text-blue-700">
+                Forgot password?
+              </Link>
+              {!effectiveRole && (
+                <p>
+                  Don&apos;t have an account?{' '}
+                  <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700">
+                    Create one
+                  </Link>
+                </p>
+              )}
+            </div>
 
             <div className="mt-4 flex justify-between text-sm">
               {effectiveRole === 'vendor' && (

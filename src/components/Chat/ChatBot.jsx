@@ -44,6 +44,7 @@ function ChatBot() {
   }
 
   const handleClose = () => {
+    resetChat()
     setIsAnimating(false)
     setTimeout(() => {
       setIsVisible(false)
@@ -60,22 +61,16 @@ function ChatBot() {
   }, [messages, isTyping])
 
   useEffect(() => {
-    if (isOpen && user && token) {
+    if (isOpen && token) {
       fetchHistory()
     }
-  }, [isOpen, user, token])
+  }, [isOpen, token])
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300)
     }
   }, [isOpen])
-
-  useEffect(() => {
-    if (!user && messages.length > 0) {
-      resetChat()
-    }
-  }, [user])
 
   const fetchHistory = async () => {
     try {
@@ -92,11 +87,6 @@ function ChatBot() {
     e.preventDefault()
     if (!input.trim() || isTyping) return
 
-    if (!user || !token) {
-      setError('Please log in to use the chat assistant')
-      return
-    }
-
     const userMessage = { role: 'user', content: input.trim(), quickLinks: [] }
     setMessages((prev) => [...prev, userMessage])
     setInput('')
@@ -104,11 +94,8 @@ function ChatBot() {
     setError(null)
 
     try {
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/ai/chat`,
-        { message: userMessage.content },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+      const { data } = await axios.post(`${API_BASE_URL}/api/ai/chat`, { message: userMessage.content }, { headers })
 
       const assistantMessage = {
         role: 'assistant',
@@ -126,7 +113,7 @@ function ChatBot() {
 
   const handleQuickLink = (link) => {
     if (link.productId) {
-      navigate(`/?product=${link.productId}`)
+      navigate(`/product/${link.productId}`)
     } else if (link.categorySlug) {
       navigate(`/?category=${link.categorySlug}`)
     }
@@ -194,25 +181,7 @@ function ChatBot() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto bg-gray-50 p-4 scrollbar-hide">
-            {!user ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                    <BsRobot size={32} className="text-blue-500" />
-                  </div>
-                  <p className="mb-4 text-gray-600">Sign in to start chatting</p>
-                  <button
-                    onClick={() => {
-                      handleClose()
-                      navigate('/login')
-                    }}
-                    className="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-all hover:bg-blue-600"
-                  >
-                    Sign In
-                  </button>
-                </div>
-              </div>
-            ) : messages.length === 0 && !isTyping ? (
+            {messages.length === 0 && !isTyping ? (
               <div className="space-y-3">
                 {/* Suggested Topics */}
                 <div className="flex items-start gap-3">
@@ -315,30 +284,28 @@ function ChatBot() {
           </div>
 
           {/* Input Area */}
-          {user && (
-            <div className="border-t border-gray-100 bg-white p-3">
-              <form onSubmit={sendMessage}>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Type your question here... (e.g., 'mangoes near me')"
-                    className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:border-blue-400 focus:bg-white focus:outline-none"
-                    disabled={isTyping}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!input.trim() || isTyping}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <FiSend size={18} />
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+          <div className="border-t border-gray-100 bg-white p-3">
+            <form onSubmit={sendMessage}>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your question here... (e.g., 'mangoes near me')"
+                  className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:border-blue-400 focus:bg-white focus:outline-none"
+                  disabled={isTyping}
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isTyping}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <FiSend size={18} />
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </>

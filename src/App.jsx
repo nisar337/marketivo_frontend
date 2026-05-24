@@ -5,8 +5,8 @@ import { CartProvider } from './context/CartContext'
 import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute, { GuestRoute, VendorRoute, AdminRoute } from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import VendorDashboard from './pages/VendorDashboard'
 import AdminPage from './pages/AdminPage'
 import CartPage from './pages/CartPage'
@@ -58,35 +58,23 @@ function App() {
         <AnimatedRoutes>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Navigate to="/" state={{ authModal: 'login' }} replace />} />
+          <Route path="/login/vendor" element={<Navigate to="/" state={{ authModal: 'login' }} replace />} />
+          <Route path="/login/admin" element={<Navigate to="/" state={{ authModal: 'login' }} replace />} />
           <Route
-            path="/login"
-            element={
-              <GuestRoute>
-                <LoginPage />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/login/vendor"
-            element={
-              <GuestRoute>
-                <LoginPage role="vendor" />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/login/admin"
+            path="/admin/login"
             element={
               <GuestRoute>
                 <LoginPage role="admin" />
               </GuestRoute>
             }
           />
+          <Route path="/register" element={<Navigate to="/" state={{ authModal: 'register' }} replace />} />
           <Route
-            path="/register"
+            path="/forgot-password"
             element={
               <GuestRoute>
-                <RegisterPage />
+                <ForgotPasswordPage />
               </GuestRoute>
             }
           />
